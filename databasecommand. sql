@@ -1,0 +1,43 @@
+CREATE DATABASE groupomania; 
+
+USE groupomania; 
+
+CREATE TABLE user (
+    id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY, 
+    firstname VARCHAR(100) NOT NULL,
+    lastname VARCHAR(100) NOT NULL, 
+    email VARCHAR(100) NOT NULL, 
+    password VARCHAR(100) NOT NULL UNIQUE,
+    imageURL VARCHAR(100),
+    position VARCHAR(100),
+    admin BOOLEAN DEFAULT false
+);
+
+CREATE TABLE post (
+    id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    userId INTEGER, 
+    messageText VARCHAR(1000), 
+    mediaURL VARCHAR(100),
+    likes INTEGER DEFAULT 0, 
+    userLiked ARRAY,
+    date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP()
+);
+
+CREATE TABLE comment (
+    id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    userId INTEGER NOT NULL,
+    messageText VARCHAR(1000), 
+    mediaURL VARCHAR(100),
+    date DATETIME NOT NULL,
+    likes INTEGER DEFAULT 0, 
+    userLiked ARRAY
+);
+
+CREATE TABLE private (
+    id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    senderId INTEGER NOT NULL,
+    recipientId INTEGER NOT NULL,
+    messageText VARCHAR(1000), 
+    mediaURL VARCHAR(100),
+    date DATETIME NOT NULL
+);
