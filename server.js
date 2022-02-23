@@ -1,7 +1,5 @@
 require('dotenv').config()
-// console.log(process.env.TOKEN_KEY)
 
-//importantion des modules : 
 const http = require('http');
 const app = require('./app');
 

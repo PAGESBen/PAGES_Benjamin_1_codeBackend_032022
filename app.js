@@ -1,5 +1,6 @@
 //Importation d'express pour les middleware et de Mongoose pour MongoDB
-const express = require('express')
+const express = require('express');
+const { cp } = require('fs');
 const path = require('path'); //permet de recuperer l'URL pour les images ligne 29
 
 // Constante app avec express

@@ -6,12 +6,31 @@ CREATE TABLE user (
     id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY, 
     firstname VARCHAR(100) NOT NULL,
     lastname VARCHAR(100) NOT NULL, 
-    email VARCHAR(100) NOT NULL, 
-    password VARCHAR(100) NOT NULL UNIQUE,
-    imageURL VARCHAR(100),
+    email VARCHAR(100) NOT NULL UNIQUE, 
+    password VARCHAR(100) NOT NULL,
+    imageURL VARCHAR(100) DEFAULT **************,
     position VARCHAR(100),
     admin BOOLEAN DEFAULT false
 );
+
+************* ajouter un utilisateur **************
+
+INSERT INTO `user` (`firstname`, `lastname`, `email`, `password`, `position`)
+VALUES
+('Jeremy', 'ZUNINO', 'jzunino@gmail.com', 'test1', 'développeur');
+
+************* modifier un utilisateur **************
+
+UPDATE `user`
+SET
+`firstname` = 'Jerem', 
+`email` = 'jerem@gmail.com'
+WHERE
+`id` = '1';
+
+*************************************
+
+
 
 CREATE TABLE post (
     id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -19,18 +38,33 @@ CREATE TABLE post (
     messageText VARCHAR(1000), 
     mediaURL VARCHAR(100),
     likes INTEGER DEFAULT 0, 
-    userLiked ARRAY,
-    date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP()
+    date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+*************creer un post************************
+
+INSERT INTO `post` (`userId`, `messageText`, `mediaURL`)
+VALUES
+();
+
+
+
+
+
+CREATE TABLE postLikes (
+    id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY, 
+    userId INTEGER,
+    postId INTEGER
+);
+
 
 CREATE TABLE comment (
     id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     userId INTEGER NOT NULL,
     messageText VARCHAR(1000), 
     mediaURL VARCHAR(100),
-    date DATETIME NOT NULL,
-    likes INTEGER DEFAULT 0, 
-    userLiked ARRAY
+    date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    likes INTEGER DEFAULT 0
 );
 
 CREATE TABLE private (
@@ -39,5 +73,11 @@ CREATE TABLE private (
     recipientId INTEGER NOT NULL,
     messageText VARCHAR(1000), 
     mediaURL VARCHAR(100),
-    date DATETIME NOT NULL
+    date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE commentLikes (
+    id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY, 
+    userId INTEGER,
+    commentId INTEGER
 );
