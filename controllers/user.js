@@ -3,7 +3,6 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 //création d'un utilisateur
-/** PB : Comment intgégrer le HASH dans la base de donnée */
 exports.userSignup = (req, res, next) => {
     bcrypt.hash(req.body.password, 10)
         .then( hash => {
@@ -24,8 +23,8 @@ exports.userLogin = (req, res, next) => {
         "SELECT * FROM `user` WHERE `email` = ?", 
         [req.body.email]
     )
-        .then(([rows, fields]) => {
-            if (!rows[0].id) {
+        .then(([rows]) => { // jeremy! :  fields pas obligatoire !!!
+            if (!rows[0]) {
                 return res.status(401).json({ message : 'utilisateur introuvable !!!'})
             }
             bcrypt.compare(req.body.password, rows[0].password)
@@ -46,4 +45,17 @@ exports.userLogin = (req, res, next) => {
             })
             .catch(error => res.status(500).json({error}));
 
+}
+
+exports.userGet = (req, res, next) => {
+    db.promise().query(
+        'SELECT * FROM `user` WHERE `email` =?', 
+        [req.body.email]
+        )
+        .then (([rows, fields]) => {
+            if(!rows[0].id) {
+                return res.status(401)
+            }
+            
+        }) 
 }
