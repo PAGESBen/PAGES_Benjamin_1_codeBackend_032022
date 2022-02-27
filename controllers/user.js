@@ -102,8 +102,6 @@ exports.modifyOneUser = (req, res, next) => {
             newImg : rows[0].imageURL
         }
 
-        console.log(req.body.user)
-
         //on va modifier l'utilisateur
         db.promise().query(
             'UPDATE `user` SET `firstname` = ?, `lastname` = ?, `email` = ?, `position` = ?, `imageURL` = ? WHERE `id` = ?', 
