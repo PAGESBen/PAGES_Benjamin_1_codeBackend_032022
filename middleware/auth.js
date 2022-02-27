@@ -2,6 +2,11 @@ const jwt = require('jsonwebtoken');
 
 module.exports = (req, res, next) => {
     try {
+
+        if(!req.headers.authorization) { // !jeremy : à verifier si c'est la bonne façon de faire ?
+            throw new Error("Un token d'identification est nécéssaire pour cette action").message;
+        }
+
         const token = req.headers.authorization.split(' ')[1];
         const decodedToken = jwt.verify(token, process.env.TOKEN_KEY);
         const userId= decodedToken.userId;

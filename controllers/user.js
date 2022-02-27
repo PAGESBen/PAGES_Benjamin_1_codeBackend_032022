@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
 
 //genration de l'url de l'image pour multer
 const generateProfilImgUrl = (req) => {
@@ -73,7 +74,7 @@ exports.modifyOneUser = (req, res, next) => {
 
     db.promise().query(
         'SELECT `id`, `imageURL` FROM `user` WHERE `id` = ? ', 
-        [req.body.userId]
+        [req.params.id]
     )
     .then(([rows]) => {
 
@@ -95,19 +96,41 @@ exports.modifyOneUser = (req, res, next) => {
         const userObject = req.file ?
         {
             ...JSON.parse(req.body.user), 
-            newImg : generateImgUrl(req)
+            newImg : generateProfilImgUrl(req)
         } : {
-            ...req.body, 
+            ...req.body,
             newImg : rows[0].imageURL
         }
 
+        console.log(req.body.user)
+
         //on va modifier l'utilisateur
         db.promise().query(
-            'UPDATE `user` SET `firstname` = ?, `lastname` = ?, `email` = ?, `position` = ?, `imageURL` = ? WHERE `id = ?`', 
-            [...userObject]
+            'UPDATE `user` SET `firstname` = ?, `lastname` = ?, `email` = ?, `position` = ?, `imageURL` = ? WHERE `id` = ?', 
+            [userObject.firstname, userObject.lastname, userObject.email, userObject.position, userObject.newImg, req.params.id]
             )
             .then(() => res.status(200).json({ message : 'Profil utilisateur mis à jour avec succès !' }))
             .catch(error => res.status(400).json({error}));
     })
     .catch(error => res.status(500).json({error}));
+}
+
+
+
+//Middleware de test
+
+exports.test = (req, res, next) => {
+
+    const userObject = req.file ?
+    {
+        ...JSON.parse(req.body.user), 
+        newImg : generateProfilImgUrl(req)
+    } : {
+        ...req.body, 
+        // newImg : "url de ma super image"
+    }
+
+    console.log(userObject)
+
+    return res.status(200).json({userObject})
 }

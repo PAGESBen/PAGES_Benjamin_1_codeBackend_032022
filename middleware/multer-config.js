@@ -19,4 +19,4 @@ const storage = multer.diskStorage({
 
 //Date.now est un time stamps (à la miliseconde) qui permet de rendre le fichier unique
 
-module.exports = multer({storage}).single('image');
+module.exports = multer({storage}).single('file');
