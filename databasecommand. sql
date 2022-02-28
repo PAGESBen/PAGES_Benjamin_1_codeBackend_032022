@@ -81,3 +81,8 @@ CREATE TABLE commentLikes (
     userId INTEGER,
     commentId INTEGER
 );
+
+
+*****************UTILISATEUR TEST **************
+amandine / test5
+test / test6

@@ -113,22 +113,26 @@ exports.modifyOneUser = (req, res, next) => {
     .catch(error => res.status(500).json({error}));
 }
 
+//Suppression d'un user (admin uniquement)
+exports.deleteOneUser = (req, res, next) => {
+    db.promise().query(
+        'SELECT `id`, `admin` FROM `user` WHERE `id` = ?',
+        [req.auth.userId]
+    )
+    .then(([rows]) => {
 
+        if (!rows[0].admin) {
+            return res.status(403).json({
+                error : new Error('Il faut etre administrateur pour pouvoir effectuer cette opération !').message
+            })
+        }
 
-//Middleware de test
-
-exports.test = (req, res, next) => {
-
-    const userObject = req.file ?
-    {
-        ...JSON.parse(req.body.user), 
-        newImg : generateProfilImgUrl(req)
-    } : {
-        ...req.body, 
-        // newImg : "url de ma super image"
-    }
-
-    console.log(userObject)
-
-    return res.status(200).json({userObject})
+        db.promise().query(
+            'DELETE FROM `user` WHERE `id` = ?', 
+            [req.params.id]
+        )
+            .then(() => res.status(200).json({message : 'Utilisateur supprimé avec succès !'}))
+            .catch(error => res.status(400).json({error}))
+    })
+    .catch(error => res.status(500).json({error}))
 }
