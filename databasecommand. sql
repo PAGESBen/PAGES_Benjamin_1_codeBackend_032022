@@ -54,8 +54,13 @@ VALUES
 CREATE TABLE postLikes (
     id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY, 
     userId INTEGER,
-    postId INTEGER
+    post_id INTEGER NOT NULL
 );
+
+//Lien avec la TABLE post : 
+ALTER TABLE postlikes
+ADD FOREIGN KEY (post_id) REFERENCES post (id)
+ON DELETE CASCADE;
 
 
 CREATE TABLE comment (

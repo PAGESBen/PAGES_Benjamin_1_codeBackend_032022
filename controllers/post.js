@@ -85,3 +85,32 @@ exports.modifyOnePost = (req, res, next) => {
     })
     .catch(error => res.status(500).json({error}));
 }
+
+exports.deleteOnePost = (req, res, next) => {
+    db.promise().query(
+        'SELECT `id`, `userId` FROM `post` WHERE `id`= ?',
+        [req.params.id]
+    )
+    .then(([post]) => {
+
+        if(!post[0]) {
+            res.status(400).json({
+                error : new Error('Post introuvable !').message
+            })
+        }
+
+        if(post[0].userId !== req.auth.userId) {
+            res.status(403).json({
+                error : new Error('Seul le propriétaire du post peut supprimer son post').message
+            })
+        }
+
+        db.promise().query(
+            'DELETE FROM `post` WHERE `id`= ?', 
+            [req.params.id]
+        )
+        .then(() => res.status(200).json({message : 'Post supprimé avec succès !'}))
+        .catch(error => res.status(400).json({error}));
+    }) 
+    .catch(error => res.status(500).json({error}));
+}
