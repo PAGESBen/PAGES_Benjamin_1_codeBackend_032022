@@ -62,7 +62,7 @@ exports.modifyOnePost = (req, res, next) => {
         }
 
         if(req.auth.userId !== post[0].userId) {
-            res.status(403).json({
+            return res.status(403).json({
                 error : new Error('Il n\'est pas possible de modifier le post d\'un autre utilisateur !').message
             })
         }
@@ -94,14 +94,14 @@ exports.deleteOnePost = (req, res, next) => {
     .then(([post]) => {
 
         if(!post[0]) {
-            res.status(400).json({
+            return res.status(400).json({
                 error : new Error('Post introuvable !').message
             })
         }
 
-        if(post[0].userId !== req.auth.userId) {
-            res.status(403).json({
-                error : new Error('Seul le propriétaire du post peut supprimer son post').message
+        if(post[0].userId !== req.auth.userId && !req.auth.admin) {
+            return res.status(403).json({
+                error : new Error('Seul le propriétaire du post ou un admin peut supprimer son post').message
             })
         }
 
