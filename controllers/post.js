@@ -88,7 +88,7 @@ exports.modifyOnePost = (req, res, next) => {
 
 exports.deleteOnePost = (req, res, next) => {
     db.promise().query(
-        'SELECT `id`, `userId` FROM `post` WHERE `id`= ?',
+        'SELECT `id`, `userId`, `mediaURL` FROM `post` WHERE `id`= ?',
         [req.params.id]
     )
     .then(([post]) => {
@@ -105,12 +105,16 @@ exports.deleteOnePost = (req, res, next) => {
             })
         }
 
-        db.promise().query(
-            'DELETE FROM `post` WHERE `id`= ?', 
-            [req.params.id]
-        )
-        .then(() => res.status(200).json({message : 'Post supprimé avec succès !'}))
-        .catch(error => res.status(400).json({error}));
+        //utilisation du package fs pour supprimer le média lié au post
+        const filename = post[0].mediaURL.split('/images/')[1]
+        fs.unlink(`images/${filename}`, () => {
+            db.promise().query(
+                'DELETE FROM `post` WHERE `id`= ?', 
+                [req.params.id]
+            )
+            .then(() => res.status(200).json({message : 'Post supprimé avec succès !'}))
+            .catch(error => res.status(400).json({error}));
+        })
     }) 
     .catch(error => res.status(500).json({error}));
 }
