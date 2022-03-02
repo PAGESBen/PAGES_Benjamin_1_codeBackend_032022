@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const fs = require('fs');
 const { NULL } = require('mysql/lib/protocol/constants/types');
+const { brotliDecompress } = require('zlib');
 
 const generateMediaUrl = (req) => {
     return `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
@@ -116,5 +117,51 @@ exports.deleteOnePost = (req, res, next) => {
             .catch(error => res.status(400).json({error}));
         })
     }) 
+    .catch(error => res.status(500).json({error}));
+}
+
+exports.like = (req, res, next) => {
+    db.promise().query(
+        'SELECT `postlikes`.`userId` FROM `postlikes` JOIN `post` ON `postlikes`.`post_id` = `post`.`id` WHERE `post`.`id` = ?',
+        [req.params.id]
+    )
+    .then(([like]) => {
+
+        if(req.body.like === 0) { // si suppression d'un like
+        
+            if([like].length === 0) { // Si l'utilisateur n'avait pas liké
+
+                return res.status(400).json({
+                    error : new Error('Aucun like à supprimer !').message
+                })
+
+            } else {
+                
+                db.promise().query(
+                    'DELETE FROM `postlikes` WHERE `userId` = ?, `post_id`= ?',
+                    [req.auth.userId, req.params.id]
+                )
+                .then(() => res.status(200).json({message : 'Like supprimé !'}))
+                .catch(error => res.status(500).json(error));
+            }
+        }
+
+        if(req.body.like === 1) { // si il s'agit d'un like
+
+            if([like].length !== 0) { // si il y a déjà un like
+                res.status(403).json({
+                    error : new Error('Il n\'est pas possible de liker 2 fois le même post !').message
+                })
+            } else {
+                db.promise().query(
+                    'INSERT INTO `postlikes` (`userId`, `post_id`) VALUES (?, ?)', 
+                    [req.auth.userId, req.params.id]
+                )
+                .then(() => res.status(200).json({message : 'Like enregistré avec succès !'}))
+                .catch(error => res.status(500).json({error}));
+            }
+        }
+
+    })
     .catch(error => res.status(500).json({error}));
 }
