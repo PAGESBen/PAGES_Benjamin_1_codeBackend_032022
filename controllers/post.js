@@ -22,7 +22,7 @@ exports.getOnePost = (req, res, next) => {
         'SELECT * FROM `post` WHERE `id`= ?', 
         [req.params.id]
     )
-    .then( ([post]) => res.status(200).json(post))
+    .then(([post]) => res.status(200).json(post))
     .catch(error => res.status(400).json({error}))
 }
 
@@ -87,6 +87,7 @@ exports.modifyOnePost = (req, res, next) => {
     .catch(error => res.status(500).json({error}));
 }
 
+//Suppression d'un post
 exports.deleteOnePost = (req, res, next) => {
     db.promise().query(
         'SELECT `id`, `userId`, `mediaURL` FROM `post` WHERE `id`= ?',
@@ -120,10 +121,11 @@ exports.deleteOnePost = (req, res, next) => {
     .catch(error => res.status(500).json({error}));
 }
 
+//Like ou delike
 exports.like = (req, res, next) => {
     db.promise().query(
-        'SELECT `postlikes`.`userId` FROM `postlikes` JOIN `post` ON `postlikes`.`post_id` = `post`.`id` WHERE `post`.`id` = ?',
-        [req.params.id]
+        'SELECT `postlikes`.`userId` FROM `postlikes` JOIN `post` ON `postlikes`.`post_id` = `post`.`id` WHERE `post`.`id` = ? AND `postlikes`.`userId` = ?',
+        [req.params.id, req.auth.userId]
     )
     .then(([like]) => {
 
@@ -163,4 +165,17 @@ exports.like = (req, res, next) => {
         }
     })
     .catch(error => res.status(500).json({error}));
+}
+
+//Récuperation du nombre de like d'un post 
+exports.likes = (req, res, next) => {
+    db.promise().query(
+        'SELECT `userId` FROM `postlikes` WHERE `post_id` = ?', 
+        [req.params.id]
+    )
+    .then(([likes]) => {
+        const LikesCount = likes.length
+        res.status(200).json({LikesCount})
+    })
+    .catch((error) => res.status(500).json(error));
 }
