@@ -32,17 +32,15 @@ exports.postOnePost = (req, res, next) => {
     const postObject = req.file ?
     {
         ...JSON.parse(req.body.post),
-        mediaURL : generateMediaUrl(req),
-        likes : 0
+        mediaURL : generateMediaUrl(req)
     } : {
         ...req.body,
-        mediaURL : NULL,
-        likes : 0
+        mediaURL : NULL
     }
 
     db.promise().query(
-        'INSERT INTO `post` (`userId`, `messageText`, `mediaURL`, `likes`) VALUES (?, ?, ?, ?)',
-        [req.auth.userId, postObject.messageText, postObject.mediaURL, postObject.likes]
+        'INSERT INTO `post` (`userId`, `messageText`, `mediaURL`) VALUES (?, ?, ?)',
+        [req.auth.userId, postObject.messageText, postObject.mediaURL]
     )
     .then(() => res.status(200).json({message : 'Post enregistré !'}))
     .catch(error => res.status(400).json({error}));

@@ -168,3 +168,13 @@ exports.deleteOneUser = (req, res, next) => {
     })
     .catch(error => res.status(500).json({error}))
 }
+
+//Récuperation de tous les posts d'un user
+exports.getUserPosts = (req, res, next) => {
+    db.promise().query(
+        'SELECT * from `post` WHERE `userId` = ?', 
+        [req.params.id]
+    )
+    .then(([posts]) => res.status(200).json({posts}))
+    .catch(error => res.status(500).json({error}));
+}

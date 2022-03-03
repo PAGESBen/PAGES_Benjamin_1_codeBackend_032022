@@ -37,7 +37,6 @@ CREATE TABLE post (
     userId INTEGER, 
     messageText VARCHAR(1000), 
     mediaURL VARCHAR(100),
-    likes INTEGER DEFAULT 0, 
     date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -69,7 +68,6 @@ CREATE TABLE comment (
     messageText VARCHAR(1000), 
     mediaURL VARCHAR(100),
     date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    likes INTEGER DEFAULT 0
 );
 
 //lien avec la table post 
