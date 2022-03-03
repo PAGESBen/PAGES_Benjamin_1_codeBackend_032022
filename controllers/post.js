@@ -129,7 +129,7 @@ exports.like = (req, res, next) => {
 
         if(req.body.like === 0) { // si suppression d'un like
         
-            if([like].length === 0) { // Si l'utilisateur n'avait pas liké
+            if(like.length === 0) { // Si l'utilisateur n'avait pas liké
 
                 return res.status(400).json({
                     error : new Error('Aucun like à supprimer !').message
@@ -138,7 +138,7 @@ exports.like = (req, res, next) => {
             } else {
                 
                 db.promise().query(
-                    'DELETE FROM `postlikes` WHERE `userId` = ?, `post_id`= ?',
+                    'DELETE FROM `postlikes` WHERE `userId` = ? AND `post_id`= ?',
                     [req.auth.userId, req.params.id]
                 )
                 .then(() => res.status(200).json({message : 'Like supprimé !'}))
@@ -148,7 +148,7 @@ exports.like = (req, res, next) => {
 
         if(req.body.like === 1) { // si il s'agit d'un like
 
-            if([like].length !== 0) { // si il y a déjà un like
+            if(like.length !== 0) { // si il y a déjà un like
                 res.status(403).json({
                     error : new Error('Il n\'est pas possible de liker 2 fois le même post !').message
                 })
@@ -161,7 +161,6 @@ exports.like = (req, res, next) => {
                 .catch(error => res.status(500).json({error}));
             }
         }
-
     })
     .catch(error => res.status(500).json({error}));
 }
