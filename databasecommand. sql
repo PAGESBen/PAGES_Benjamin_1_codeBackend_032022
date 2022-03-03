@@ -72,6 +72,9 @@ CREATE TABLE comment (
     likes INTEGER DEFAULT 0
 );
 
+//lien avec la table post 
+ALTER TABLE comment ADD FOREIGN KEY (post_id) REFERENCES post (id) ON DELETE CASCADE;
+
 CREATE TABLE private (
     id INTEGER NOT NULL AUTO_INCREMENT PRIMARY KEY,
     senderId INTEGER NOT NULL,

@@ -9,6 +9,7 @@ const app = express()
 //Routes
 const userRoutes = require('./routes/user');
 const postRoutes = require('./routes/post');
+const commentRoutes = require('./routes/comment');
 
 //Sécurité : CORS
 app.use((req, res, next) => {
@@ -23,6 +24,7 @@ app.use('/images', express.static(path.join(__dirname, 'images'))); //permet à 
 
 app.use('/api', userRoutes);
 app.use('/api/post', postRoutes);
+app.use('/api/post', commentRoutes);
 
 // Exportation de l'app
 module.exports = app
