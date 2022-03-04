@@ -125,11 +125,11 @@ exports.like = (req, res, next) => {
         'SELECT `postlikes`.`userId` FROM `postlikes` JOIN `post` ON `postlikes`.`post_id` = `post`.`id` WHERE `post`.`id` = ? AND `postlikes`.`userId` = ?',
         [req.params.id, req.auth.userId]
     )
-    .then(([like]) => {
+    .then(([userLike]) => {
 
         if(req.body.like === 0) { // si suppression d'un like
         
-            if(like.length === 0) { // Si l'utilisateur n'avait pas liké
+            if(userLike.length === 0) { // Si l'utilisateur n'avait pas liké
 
                 return res.status(400).json({
                     error : new Error('Aucun like à supprimer !').message
@@ -148,7 +148,7 @@ exports.like = (req, res, next) => {
 
         if(req.body.like === 1) { // si il s'agit d'un like
 
-            if(like.length !== 0) { // si il y a déjà un like
+            if(userLike.length !== 0) { // si il y a déjà un like
                 res.status(403).json({
                     error : new Error('Il n\'est pas possible de liker 2 fois le même post !').message
                 })
@@ -171,8 +171,8 @@ exports.likes = (req, res, next) => {
         'SELECT `userId` FROM `postlikes` WHERE `post_id` = ?', 
         [req.params.id]
     )
-    .then(([likes]) => {
-        const LikesCount = likes.length
+    .then(([userLike]) => {
+        const LikesCount = userLike.length
         res.status(200).json({LikesCount})
     })
     .catch((error) => res.status(500).json(error));

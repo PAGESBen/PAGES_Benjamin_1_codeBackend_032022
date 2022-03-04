@@ -88,6 +88,12 @@ CREATE TABLE commentLikes (
     commentId INTEGER
 );
 
+======liaison avec les comments
+ALTER TABLE commentlikes
+ADD FOREIGN KEY (comment_id) REFERENCES comment (id)
+ON DELETE CASCADE;
+
+
 
 *****************UTILISATEUR TEST **************
 amandine / test5
