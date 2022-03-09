@@ -1,10 +1,8 @@
 const db = require('../config/db');
 const fs = require('fs');
+const tool = require('../config/tool');
 const { get } = require('express/lib/response');
 
-const generateMediaUrl = (req) => {
-    return `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-}
 
 
 //Récuperation des commentaires d'un post
@@ -23,7 +21,7 @@ exports.postComment = (req, res, next) => {
     const commentObject = req.file ?
     {
         ...JSON.parse(req.body.comment),
-        mediaURL : generateMediaUrl(req),
+        mediaURL : tool.getImgUrl(req, 'comment'),
     } : {
         ...req.body,
         mediaURL : NULL,
@@ -60,10 +58,10 @@ exports.modifyOnecomment = (req, res, next) => {
         const commentObject = req.file ?
         {
             ...JSON.parse(req.body.comment),
-            mediaURL : generateMediaUrl(req),
+            mediaURL : tool.getImgUrl(req, 'comment')
         } : {
             ...req.body,
-            mediaURL : comment[0].mediaURL,
+            mediaURL : comment[0].mediaURL
         }
 
         db.promise().query(

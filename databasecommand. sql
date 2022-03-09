@@ -99,3 +99,12 @@ ON DELETE CASCADE;
 amandine / test5
 test / test6
 test2 / test6
+
+
+
+******************************************-------------------***************************
+ALTER TABLE `table enfant`
+
+ADD FOREIGN KEY (`famille_id`) REFERENCES `table parent` (`id`)
+
+ON DELETE CASCADE;

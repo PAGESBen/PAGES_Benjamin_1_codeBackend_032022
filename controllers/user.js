@@ -1,23 +1,16 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const tool = require('../config/tool');
 const fs = require('fs');
-
-//genration de l'url de l'image pour multer
-const generateProfilImgUrl = (req) => {
-    return `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-}
-
-const generateDefaultProfileUrl = (req) => { // !jeremy : j'ai choisi de passer par cette fonction mais est ce une meilleure pratique de mettre une valeur pas défault directement dans la base?
-    return `${req.protocol}://${req.get('host')}/images/defaultProfile.PNG`
-}
+const { NULL } = require('mysql/lib/protocol/constants/types');
 
 //création d'un utilisateur
 exports.userSignup = (req, res, next) => {
     bcrypt.hash(req.body.password, 10)
         .then( hash => {
 
-            const imageURL = generateDefaultProfileUrl(req)
+            const imageURL = tool.getImgUrl(req, 'profile', 'defaultProfile.PNG')
 
             db.promise().query(
                 "INSERT INTO `user` (`firstname`, `lastname`, `email`, `password`, `imageURL`, `position`) VALUES (?, ?, ?, ?, ?, ?)",
@@ -37,7 +30,9 @@ exports.userLogin = (req, res, next) => {
     )
         .then(([rows]) => { // jeremy! :  fields pas obligatoire !!!
             if (!rows[0]) {
-                return res.status(404).json({ message : 'utilisateur introuvable !!!' })
+                return res.status(404).json({
+                    error : new Error('L\'adresse mail est inconnue !').message
+                })
             }
             bcrypt.compare(req.body.password, rows[0].password)
                 .then(valid => {
@@ -63,11 +58,13 @@ exports.userLogin = (req, res, next) => {
 exports.getOneUser = (req, res, next) => {
     db.promise().query(
         'SELECT `id`, `firstname`, `lastname`, `email`, `imageURL`, `position`  FROM `user` WHERE `id` =?', 
-        [req.params.id] //l'id de l'utilisateur est celui de l'URL
+        [req.params.id]
         )
         .then(([rows]) => {
             if(!rows[0]) {
-                return res.status(404).json({ message : 'utilisateur introuvable !!!' })
+                return res.status(404).json({
+                    error : new Error('utilisateur introuvable !!!').message
+                })
             } else {
                 return res.status(200).json(rows[0])
             }
@@ -102,28 +99,27 @@ exports.modifyOneUser = (req, res, next) => {
         const userObject = req.file ?
         {
             ...JSON.parse(req.body.user), 
-            newImg : generateProfilImgUrl(req)
+            newImg : tool.getImgUrl(req, 'profile')
         } : {
             ...req.body, 
-            newImg : rows[0].imageURL
-            
+            newImg : rows[0].imageURL 
         }
 
-        const filename = rows[0].imageURL.split('/images/')[1]
+        const filename = rows[0].imageURL.split('/profile/')[1]
 
-        if(!req.file || filename === 'defaultProfile.PNG') { // si l'image est celle par défault ou qu'il n'y a pas d'image
+        if(!req.file || filename === 'defaultProfile.PNG') { // si l'image est celle par défault ou qu'il n'y a pas d'image dans la requète
             db.promise().query(
                 'UPDATE `user` SET `firstname` = ?, `lastname` = ?, `email` = ?, `position` = ?, `imageURL` = ? WHERE `id` = ?', 
                 [userObject.firstname, userObject.lastname, userObject.email, userObject.position, userObject.newImg, req.params.id]
-                )
+            )
                 .then(() => res.status(200).json({ message : 'Profil utilisateur mis à jour avec succès !' }))
                 .catch(error => res.status(400).json({error}));
         } else { // si il y avait une image et que ce n'etait pas l'image par défault on la supprime
-            fs.unlink(`images/${filename}`, () => {
+            fs.unlink(`images/profile/${filename}`, () => {
                 db.promise().query(
                     'UPDATE `user` SET `firstname` = ?, `lastname` = ?, `email` = ?, `position` = ?, `imageURL` = ? WHERE `id` = ?', 
-                    [userObject.firstname, userObject.lastname, userObject.email, userObject.position, userObject.newImg, req.params.id]
-                    )
+                    [userObject.firstname, userObject.lastname, userObject.email, userObject.position, userObject.newImg, req.params.id]    
+                )
                     .then(() => res.status(200).json({ message : 'Profil utilisateur mis à jour avec succès !' }))
                     .catch(error => res.status(400).json({error}));
             })
@@ -134,29 +130,42 @@ exports.modifyOneUser = (req, res, next) => {
 
 //Suppression d'un user (admin uniquement)
 exports.deleteOneUser = (req, res, next) => {
+
+    if (!req.auth.admin) {
+        return res.status(403).json({
+            error : new Error('Il faut etre administrateur pour pouvoir effectuer cette opération !').message
+        })
+    }
+
     db.promise().query(
-        'SELECT `imageURL` FROM `user` WHERE `id` = ?',
+        'SELECT `id`, `imageURL` FROM `user` WHERE `id` = ?',
         [req.params.id]
     )
     .then(([rows]) => {
 
-        if (!req.auth.admin) {
-            return res.status(403).json({
-                error : new Error('Il faut etre administrateur pour pouvoir effectuer cette opération !').message
+        if(!rows[0]) {
+            return res.status(404).json({
+                error : new Error('utilisateur introuvable !!!').message
             })
         }
 
-        const filename = rows[0].imageURL.split('/images/')[1]
+        const filename = rows[0].imageURL != null ? rows[0].imageURL.split('/profile/')[1] : null
 
-        if(filename === 'defaultProfile.PNG'){
+    console.log(filename)
+
+        if(filename === 'defaultProfile.PNG' || filename === null){
+        console.log(filename)
+
             db.promise().query(
                 'DELETE FROM `user` WHERE `id` = ?', 
                 [req.params.id]
             )
                 .then(() => res.status(200).json({message : 'Utilisateur supprimé avec succès !'}))
                 .catch(error => res.status(400).json({error}))
+        
         } else {
-            fs.unlink(`images/${filename}`, () => {
+
+            fs.unlink(`/images/profile/${filename}`, () => {
                 db.promise().query(
                     'DELETE FROM `user` WHERE `id` = ?', 
                     [req.params.id]
@@ -166,6 +175,7 @@ exports.deleteOneUser = (req, res, next) => {
             })
         }
     })
+
     .catch(error => res.status(500).json({error}))
 }
 
@@ -177,4 +187,18 @@ exports.getUserPosts = (req, res, next) => {
     )
     .then(([posts]) => res.status(200).json({posts}))
     .catch(error => res.status(500).json({error}));
+}
+
+exports.test= (req, res, next) => {
+    db.promise().query(
+        'SELECT `imageUrl` from `user` WHERE id = 1'
+    )
+    .then(([user]) => {
+        res.status(200).json({message : 'okokok'})
+
+        const filename = user[0].imageUrl != null ? user[0].imageURL.split('/images/')[1] : null;
+
+        console.log(filename)
+    })
+    .catch(() => console.log('ça marche pas !!!'))
 }

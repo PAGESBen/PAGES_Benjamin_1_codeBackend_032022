@@ -1,11 +1,8 @@
 const db = require('../config/db');
+const tool = require('../config/tool');
 const fs = require('fs');
 const { NULL } = require('mysql/lib/protocol/constants/types');
 const { brotliDecompress } = require('zlib');
-
-const generateMediaUrl = (req) => {
-    return `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-}
 
 //Recuperation de tous les posts
 exports.getAllPosts = (req, res, next) => {
@@ -19,7 +16,7 @@ exports.getAllPosts = (req, res, next) => {
 //recuperation d'un post
 exports.getOnePost = (req, res, next) => {
     db.promise().query(
-        'SELECT * FROM `post` WHERE `id`= ?', 
+        'SELECT * FROM `post` WHERE `id`= ? ORDER BY `date` DESC', 
         [req.params.id]
     )
     .then(([post]) => res.status(200).json(post))
@@ -32,7 +29,7 @@ exports.postOnePost = (req, res, next) => {
     const postObject = req.file ?
     {
         ...JSON.parse(req.body.post),
-        mediaURL : generateMediaUrl(req)
+        mediaURL : tool.getImgUrl(req, 'post')
     } : {
         ...req.body,
         mediaURL : NULL
@@ -69,7 +66,7 @@ exports.modifyOnePost = (req, res, next) => {
         const postObject = req.file ?
         {
             ...JSON.parse(req.body.post),
-            mediaURL : generateMediaUrl(req),
+            mediaURL : tool.getImgUrl(req, 'post'),
         } : {
             ...req.body,
             mediaURL : post[0].mediaURL,
@@ -177,3 +174,4 @@ exports.likes = (req, res, next) => {
     })
     .catch((error) => res.status(500).json(error));
 }
+
