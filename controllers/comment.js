@@ -95,8 +95,8 @@ exports.deleteOneComment = (req, res, next) => {
         }
 
         //utilisation du package fs pour supprimer le média lié au commentaire
-        const filename = comment[0].mediaURL.split('/images/')[1]
-        fs.unlink(`images/${filename}`, () => {
+        const filename = comment[0].mediaURL.split('/media/')[1]
+        fs.unlink(`media/${filename}`, () => {
             db.promise().query(
                 'DELETE FROM `comment` WHERE `id`= ?', 
                 [req.params.id]

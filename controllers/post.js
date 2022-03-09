@@ -7,7 +7,7 @@ const { brotliDecompress } = require('zlib');
 //Recuperation de tous les posts
 exports.getAllPosts = (req, res, next) => {
     db.promise().query(
-        'SELECT * FROM `post`'
+        'SELECT * FROM `post` ORDER BY `date` DESC'
     )
     .then(([posts]) => res.status(200).json(posts))
     .catch(error => res.status(400).json({error}));
@@ -16,8 +16,8 @@ exports.getAllPosts = (req, res, next) => {
 //recuperation d'un post
 exports.getOnePost = (req, res, next) => {
     db.promise().query(
-        'SELECT * FROM `post` WHERE `id`= ? ORDER BY `date` DESC', 
-        [req.params.id]
+        'SELECT * FROM `post` WHERE `id`= ?',
+        [req.params.post_id]
     )
     .then(([post]) => res.status(200).json(post))
     .catch(error => res.status(400).json({error}))
@@ -47,7 +47,7 @@ exports.postOnePost = (req, res, next) => {
 exports.modifyOnePost = (req, res, next) => {
     db.promise().query(
         'SELECT `userId`, `mediaURL` FROM `post` WHERE `id`= ?', 
-        [req.params.id]
+        [req.params.post_id]
     )
     .then(([post]) => {
     
@@ -74,7 +74,7 @@ exports.modifyOnePost = (req, res, next) => {
 
         db.promise().query(
             'UPDATE `post` SET `messageText` = ?, `mediaURL`=? WHERE `id`= ?',
-            [postObject.messageText, postObject.mediaURL, req.params.id]
+            [postObject.messageText, postObject.mediaURL, req.params.post_id]
         )
         .then(() => res.status(200).json({message : 'Post modifié avec succès !'}))
         .catch(error => res.status(400).json({error}));
@@ -86,15 +86,9 @@ exports.modifyOnePost = (req, res, next) => {
 exports.deleteOnePost = (req, res, next) => {
     db.promise().query(
         'SELECT `id`, `userId`, `mediaURL` FROM `post` WHERE `id`= ?',
-        [req.params.id]
+        [req.params.post_id]
     )
     .then(([post]) => {
-
-        if(!post[0]) {
-            return res.status(400).json({
-                error : new Error('Post introuvable !').message
-            })
-        }
 
         if(post[0].userId !== req.auth.userId && !req.auth.admin) {
             return res.status(403).json({
@@ -103,11 +97,11 @@ exports.deleteOnePost = (req, res, next) => {
         }
 
         //utilisation du package fs pour supprimer le média lié au post
-        const filename = post[0].mediaURL.split('/images/')[1]
-        fs.unlink(`images/${filename}`, () => {
+        const filename = post[0].mediaURL.split('/post/')[1]
+        fs.unlink(`media/post/${filename}`, () => {
             db.promise().query(
                 'DELETE FROM `post` WHERE `id`= ?', 
-                [req.params.id]
+                [req.params.post_id]
             )
             .then(() => res.status(200).json({message : 'Post supprimé avec succès !'}))
             .catch(error => res.status(400).json({error}));
@@ -120,7 +114,7 @@ exports.deleteOnePost = (req, res, next) => {
 exports.like = (req, res, next) => {
     db.promise().query(
         'SELECT `postlikes`.`userId` FROM `postlikes` JOIN `post` ON `postlikes`.`post_id` = `post`.`id` WHERE `post`.`id` = ? AND `postlikes`.`userId` = ?',
-        [req.params.id, req.auth.userId]
+        [req.params.post_id, req.auth.userId]
     )
     .then(([userLike]) => {
 
@@ -136,7 +130,7 @@ exports.like = (req, res, next) => {
                 
                 db.promise().query(
                     'DELETE FROM `postlikes` WHERE `userId` = ? AND `post_id`= ?',
-                    [req.auth.userId, req.params.id]
+                    [req.auth.userId, req.params.post_id]
                 )
                 .then(() => res.status(200).json({message : 'Like supprimé !'}))
                 .catch(error => res.status(500).json(error));
@@ -152,7 +146,7 @@ exports.like = (req, res, next) => {
             } else {
                 db.promise().query(
                     'INSERT INTO `postlikes` (`userId`, `post_id`) VALUES (?, ?)', 
-                    [req.auth.userId, req.params.id]
+                    [req.auth.userId, req.params.post_id]
                 )
                 .then(() => res.status(200).json({message : 'Like enregistré avec succès !'}))
                 .catch(error => res.status(500).json({error}));
@@ -166,7 +160,7 @@ exports.like = (req, res, next) => {
 exports.likes = (req, res, next) => {
     db.promise().query(
         'SELECT `userId` FROM `postlikes` WHERE `post_id` = ?', 
-        [req.params.id]
+        [req.params.post_id]
     )
     .then(([userLike]) => {
         const LikesCount = userLike.length

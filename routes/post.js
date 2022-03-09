@@ -4,13 +4,14 @@ const postCtrl = require('../controllers/post');
 const auth = require('../middleware/auth');
 const admin = require('../middleware/admin');
 const multer = require('../middleware/multer-config');
+const routeControl = require('../middleware/route-control');
 
 router.get('/', auth, postCtrl.getAllPosts);  //Récupération de tous les posts
-router.get('/:id', auth, postCtrl.getOnePost);  //récuperation d'un post
-router.post('/', auth, multer, postCtrl.postOnePost); //Ajout d'un post
-router.put('/:id', auth, multer, postCtrl.modifyOnePost);  //Modification d'un post
-router.delete('/:id', auth, admin, postCtrl.deleteOnePost); //Suppression d'un post
-router.post('/:id/like', auth, postCtrl.like); //Liker ou deliker un post
-router.get('/:id/likes', auth, postCtrl.likes); //Récuperation des likes
+router.get('/:post_id', auth, routeControl.postRoute, postCtrl.getOnePost);  //récuperation d'un post
+router.post('/', auth, routeControl.postRoute, multer, postCtrl.postOnePost); //Ajout d'un post
+router.put('/:post_id', auth, routeControl.postRoute, multer, postCtrl.modifyOnePost);  //Modification d'un post
+router.delete('/:post_id', auth, routeControl.postRoute, admin, postCtrl.deleteOnePost); //Suppression d'un post
+router.post('/:post_id/like', auth, routeControl.postRoute, postCtrl.like); //Liker ou deliker un post
+router.get('/:post_id/likes', auth, routeControl.postRoute, postCtrl.likes); //Récuperation des likes
 
 module.exports = router;

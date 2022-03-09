@@ -11,6 +11,6 @@ router.get('/:id/comment', auth, commentCtrl.getComment); //Récuperation des co
 router.put('/comment/:id', auth, multer, commentCtrl.modifyOnecomment); //Modification d'un commentaire
 router.delete('/comment/:id', auth, admin, multer, commentCtrl.deleteOneComment);  //Suppression d'un commentaire
 router.post('/comment/:id/like', auth, commentCtrl.like); //Ajout ou suppression d'un like
-router.get('/comment/:id/likes', auth, commentCtrl.likes) //Récupère le nombre de like d'un commentaire
+router.get('/comment/:id/likes', auth, commentCtrl.likes); //Récupère le nombre de like d'un commentaire
 
 module.exports = router;

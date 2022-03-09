@@ -8,8 +8,13 @@ const MIME_TYPES = {
 };
 
 const storage = multer.diskStorage({
+    
+    // fileFilter : (req, file, callback) => {
+    //     if(file.mimetype === 'image/jpg')
+    // },
+
     destination: (req, file, callback) => {
-        callback(null, 'images')
+        callback(null, req.routeConfig.imagePath)
     },
     filename: (req, file, callback) => {
         const name = file.originalname.split(' ').join('_');
