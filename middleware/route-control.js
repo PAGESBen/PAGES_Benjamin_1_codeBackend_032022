@@ -57,6 +57,38 @@ exports.commentRoute = (req, res, next) => {
     const imagePath = 'media/comment' 
     req.routeConfig = {route, imagePath}
 
+    if(req.params.post_id) {
+        db.promise().query(
+            'SELECT `id` FROM `post` WHERE `id` = ?',
+            [req.params.post_id]
+        )
+            .then(([post]) => {
+                if (post.length === 0) {
+                    return res.status(404).json({
+                        error : new Error('Post introuvable !').message
+                    })
+                }
+            })
+            .catch(error => res.status(500).json({error}))
+    }
+
+
+    if(req.params.comment_id) {
+        db.promise().query(
+            'SELECT `id` FROM `comment` WHERE `id` = ?',
+            [req.params.comment_id]
+        )
+            .then(([comment]) => {
+                if (comment.length === 0) {
+                    return res.status(404).json({
+                        error : new Error('Commentaire introuvable !').message
+                    })
+                }
+            })
+            .catch(error => res.status(500).json({error}))
+    }
+
+
     next()
     
 }

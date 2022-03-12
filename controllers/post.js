@@ -1,16 +1,40 @@
 const db = require('../config/db');
 const tool = require('../config/tool');
 const fs = require('fs');
-const { NULL } = require('mysql/lib/protocol/constants/types');
-const { brotliDecompress } = require('zlib');
+
 
 //Recuperation de tous les posts
-exports.getAllPosts = (req, res, next) => {
-    db.promise().query(
-        'SELECT * FROM `post` ORDER BY `date` DESC'
-    )
-    .then(([posts]) => res.status(200).json(posts))
-    .catch(error => res.status(400).json({error}));
+exports.getAllPosts = async (req, res, next) => {
+    try {
+        let [posts] = await db.promise().query(
+            'SELECT * FROM `post` ORDER BY `date` DESC'
+        )
+        let postIds = posts.map(post => post.id )
+
+        let [likes] = await db.promise().query(
+            'SELECT `post_id`, COUNT(*) AS countLikes FROM `postlikes` WHERE `post_id` IN ('+postIds.join(',')+') GROUP BY `post_id`'
+        )
+
+        'SELECT `post_id` FROM `postlikes` WHERE `post_id` IN ('+postIds.join(',')+') AND `userId` = ?', 
+        [req.auth.userId]
+
+        posts = posts.map(post => { // attention ajouter le booleen isliked pour savoir si l'utilisateur a liké
+            post.likes = 0;
+            for (let like of likes ) {
+                if (like.post_id === post.id) {
+                    post.likes = like.countLikes
+                }
+            }
+
+
+            return post
+        })
+
+        return res.status(200).json(posts)
+    }
+    catch (e) {
+        return res.status(500).json({e})
+    }
 }
 
 //recuperation d'un post
@@ -50,12 +74,6 @@ exports.modifyOnePost = (req, res, next) => {
         [req.params.post_id]
     )
     .then(([post]) => {
-    
-        if(!post[0]){
-            return res.status(400).json({
-                error : new Error('Post introuvable !').message
-            })
-        }
 
         if(req.auth.userId !== post[0].userId) {
             return res.status(403).json({
@@ -72,18 +90,32 @@ exports.modifyOnePost = (req, res, next) => {
             mediaURL : post[0].mediaURL,
         }
 
-        db.promise().query(
-            'UPDATE `post` SET `messageText` = ?, `mediaURL`=? WHERE `id`= ?',
-            [postObject.messageText, postObject.mediaURL, req.params.post_id]
-        )
-        .then(() => res.status(200).json({message : 'Post modifié avec succès !'}))
-        .catch(error => res.status(400).json({error}));
+        const filename = post[0].mediaURL != null ? post[0].mediaURL.split('/post/')[1] : null
+
+        if(!req.file || filename === null ) {
+            db.promise().query(
+                'UPDATE `post` SET `messageText` = ?, `mediaURL`=? WHERE `id`= ?',
+                [postObject.messageText, postObject.mediaURL, req.params.post_id]
+            )
+            .then(() => res.status(200).json({message : 'Post modifié avec succès !'}))
+            .catch(error => res.status(400).json({error}));
+        } else {
+            fs.unlink(`media/post/${filename}`, () => {
+                db.promise().query(
+                    'UPDATE `post` SET `messageText` = ?, `mediaURL`=? WHERE `id`= ?',
+                    [postObject.messageText, postObject.mediaURL, req.params.post_id]
+                )
+                .then(() => res.status(200).json({message : 'Post modifié avec succès !'}))
+                .catch(error => res.status(400).json({error}));
+            })
+        }
+
     })
     .catch(error => res.status(500).json({error}));
 }
 
 //Suppression d'un post
-exports.deleteOnePost = (req, res, next) => {
+exports.deleteOnePost = async (req, res, next) => {
     db.promise().query(
         'SELECT `id`, `userId`, `mediaURL` FROM `post` WHERE `id`= ?',
         [req.params.post_id]
@@ -97,15 +129,28 @@ exports.deleteOnePost = (req, res, next) => {
         }
 
         //utilisation du package fs pour supprimer le média lié au post
-        const filename = post[0].mediaURL.split('/post/')[1]
-        fs.unlink(`media/post/${filename}`, () => {
+        const filename = post[0].mediaURL != null ? post[0].mediaURL.split('/post/')[1] : null
+
+        if (filename !== null) {
+            // if(false) { 
+            //     await fs.unlink(`media/post/${filename}`)
+            //  }
+            fs.unlink(`media/post/${filename}`, () => {
+                db.promise().query(
+                    'DELETE FROM `post` WHERE `id`= ?', 
+                    [req.params.post_id]
+                )
+                .then(() => res.status(200).json({message : 'Post supprimé avec succès !'}))
+                .catch(error => res.status(400).json({error}));
+            })
+        } else {
             db.promise().query(
                 'DELETE FROM `post` WHERE `id`= ?', 
                 [req.params.post_id]
             )
             .then(() => res.status(200).json({message : 'Post supprimé avec succès !'}))
             .catch(error => res.status(400).json({error}));
-        })
+        }
     }) 
     .catch(error => res.status(500).json({error}));
 }

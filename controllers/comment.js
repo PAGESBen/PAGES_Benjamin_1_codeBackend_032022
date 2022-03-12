@@ -9,7 +9,7 @@ const { get } = require('express/lib/response');
 exports.getComment = (req, res, next) => {
     db.promise().query(
         'SELECT * FROM comment WHERE post_id = ?', 
-        [req.params.id]
+        [req.params.post_id]
     )
     .then(([comments]) => res.status(200).json({comments}))
     .catch(error => res.status(500).json({error}));
@@ -29,7 +29,7 @@ exports.postComment = (req, res, next) => {
 
     db.promise().query(
         'INSERT INTO `comment` (`userId`, `messageText`, `mediaURL`, `post_id`) VALUES (?, ?, ?, ?)',
-        [req.auth.userId, commentObject.messageText, commentObject.mediaURL, req.params.id]
+        [req.auth.userId, commentObject.messageText, commentObject.mediaURL, req.params.post_id]
     )
     .then(() => res.status(200).json({message : 'Commentaire enregistré !'}))
     .catch(error => res.status(400).json({error}));
@@ -39,7 +39,7 @@ exports.postComment = (req, res, next) => {
 exports.modifyOnecomment = (req, res, next) => {
     db.promise().query(
         'SELECT `userId`, `mediaURL` FROM `comment` WHERE `id`= ?', 
-        [req.params.id]
+        [req.params.comment_id]
     )
     .then(([comment]) => {
     
@@ -66,7 +66,7 @@ exports.modifyOnecomment = (req, res, next) => {
 
         db.promise().query(
             'UPDATE `comment` SET `messageText` = ?, `mediaURL`=? WHERE `id`= ?',
-            [commentObject.messageText, commentObject.mediaURL, req.params.id]
+            [commentObject.messageText, commentObject.mediaURL, req.params.comment_id]
         )
         .then(() => res.status(200).json({message : 'Commentaire modifié avec succès !'}))
         .catch(error => res.status(400).json({error}));
@@ -78,7 +78,7 @@ exports.modifyOnecomment = (req, res, next) => {
 exports.deleteOneComment = (req, res, next) => {
     db.promise().query(
         'SELECT `id`, `userId`, `mediaURL` FROM `comment` WHERE `id`= ?',
-        [req.params.id]
+        [req.params.comment_id]
     )
     .then(([comment]) => {
 
@@ -99,7 +99,7 @@ exports.deleteOneComment = (req, res, next) => {
         fs.unlink(`media/${filename}`, () => {
             db.promise().query(
                 'DELETE FROM `comment` WHERE `id`= ?', 
-                [req.params.id]
+                [req.params.comment_id]
             )
             .then(() => res.status(200).json({message : 'Commentaire supprimé avec succès !'}))
             .catch(error => res.status(400).json({error}));
@@ -113,7 +113,7 @@ exports.deleteOneComment = (req, res, next) => {
 exports.like = (req, res, next) => {
     db.promise().query(
         'SELECT `userId` FROM `commentlikes` WHERE `comment_id` = ? AND `userId` = ?',
-        [req.params.id, req.auth.userId]
+        [req.params.comment_id, req.auth.userId]
     )
     .then(([userLike]) => {
 
@@ -129,7 +129,7 @@ exports.like = (req, res, next) => {
                 
                 db.promise().query(
                     'DELETE FROM `commentlikes` WHERE `userId` = ? AND `comment_id`= ?',
-                    [req.auth.userId, req.params.id]
+                    [req.auth.userId, req.params.comment_id]
                 )
                 .then(() => res.status(200).json({message : 'Like supprimé !'}))
                 .catch(error => res.status(500).json(error));
@@ -145,7 +145,7 @@ exports.like = (req, res, next) => {
             } else {
                 db.promise().query(
                     'INSERT INTO `commentlikes` (`userId`, `comment_id`) VALUES (?, ?)', 
-                    [req.auth.userId, req.params.id]
+                    [req.auth.userId, req.params.comment_id]
                 )
                 .then(() => res.status(200).json({message : 'Like enregistré avec succès !'}))
                 .catch(error => res.status(500).json({error}));
@@ -159,7 +159,7 @@ exports.like = (req, res, next) => {
 exports.likes = (req, res, next) => {
     db.promise().query(
         'SELECT `userId` FROM `commentlikes` WHERE `comment_id` = ?', 
-        [req.params.id]
+        [req.params.comment_id]
     )
     .then(([userLike]) => {
         const LikesCount = userLike.length

@@ -167,17 +167,3 @@ exports.getUserPosts = (req, res, next) => {
         .then(([posts]) => res.status(200).json({posts}))
         .catch(error => res.status(500).json({error}));
 }
-
-// exports.test= (req, res, next) => {
-//     db.promise().query(
-//         'SELECT `imageUrl` from `user` WHERE id = 1'
-//     )
-//     .then(([user]) => {
-//         res.status(200).json({message : 'okokok'})
-
-//         const filename = user[0].imageUrl != null ? user[0].imageURL.split('/media/')[1] : null;
-
-//         console.log(filename)
-//     })
-//     .catch(() => console.log('ça marche pas !!!'))
-// }

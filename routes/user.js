@@ -13,6 +13,4 @@ router.put('/user/:user_id', auth, routeControl.userRoute, multer, userCtrl.modi
 router.delete('/user/:user_id', auth, admin, routeControl.userRoute, userCtrl.deleteOneUser); //Suppresion d'un profil
 router.get('/user/:user_id/posts', auth, routeControl.userRoute, userCtrl.getUserPosts); //Récuperation des posts d'un user
 
-// router.get('/user/:id/test', userCtrl.test);
-
 module.exports = router;
