@@ -9,20 +9,20 @@ exports.userRoute = (req, res, next) => {
     req.routeConfig = {route, imagePath};
 
     //si id user dans les paramètres alors on va verifier que l'utilisateur existe
-    if(req.params.user_id) {
-        db.promise().query(
-            'SELECT `id` FROM `user` WHERE `id` = ?',
-            [req.params.user_id]
-        )
-            .then(([user]) => {
-                if (user.length === 0) {
-                    return res.status(404).json({
-                        error : new Error('Utilisateur introuvable !').message
-                    })
-                }
-            })
-            .catch(error => res.status(500).json({error})) //!jeremy : return est il obligatoire pour arreter la fonction sur cette erreur
-    }
+    // if(req.params.user_id) {
+    //     db.promise().query(
+    //         'SELECT `id` FROM `user` WHERE `id` = ?',
+    //         [req.params.user_id]
+    //     )
+    //         .then(([user]) => {
+    //             if (user.length === 0) {
+    //                 return res.status(404).json({
+    //                     error : new Error('Utilisateur introuvable !').message
+    //                 })
+    //             }
+    //         })
+    //         .catch(error => res.status(500).json({error})) //!jeremy : return est il obligatoire pour arreter la fonction sur cette erreur
+    // }
 
     next()
 }

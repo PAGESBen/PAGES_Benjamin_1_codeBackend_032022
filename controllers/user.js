@@ -1,9 +1,9 @@
 const db = require('../config/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const sql = require('../config/sqlRequest');
 const tool = require('../config/tool');
 const fs = require('fs');
-const { NULL } = require('mysql/lib/protocol/constants/types');
 
 //création d'un utilisateur
 exports.userSignup = (req, res, next) => {
@@ -13,7 +13,7 @@ exports.userSignup = (req, res, next) => {
             const imageURL = tool.getImgUrl(req, 'profile', 'defaultProfile.PNG')
 
             db.promise().query(
-                "INSERT INTO `user` (`firstname`, `lastname`, `email`, `password`, `imageURL`, `position`) VALUES (?, ?, ?, ?, ?, ?)",
+                sql.createUser,
                 [req.body.firstname, req.body.lastname, req.body.email, hash, imageURL, req.body.position] // sécurité : requête préparée
             )
                 .then(() => res.status(201).json({message : "utilisateur créé avec succès !"}))
@@ -25,7 +25,7 @@ exports.userSignup = (req, res, next) => {
 //login utilisateur
 exports.userLogin = (req, res, next) => {
     db.promise().query(
-        "SELECT * FROM `user` WHERE `email` = ?", 
+        sql.getUserByMail, 
         [req.body.email]
     )
         .then(([rows]) => { // jeremy! :  fields pas obligatoire !!!
@@ -57,61 +57,82 @@ exports.userLogin = (req, res, next) => {
 //récuperation du profil d'un user
 exports.getOneUser = (req, res, next) => {
     db.promise().query(
-        'SELECT `id`, `firstname`, `lastname`, `email`, `imageURL`, `position`  FROM `user` WHERE `id` =?', 
+        sql.getUserProfil, 
         [req.params.user_id]
         )
-        .then(([user]) => res.status(200).json(user[0]))
+        .then(([user]) => {
+
+            if (user.length === 0) {
+                return res.status(404).json({
+                    error : new Error('l\'utilisateur n\'existe pas').message
+                })
+            }
+
+            res.status(200).json(user[0])
+        })
         .catch((error) => res.status(500).json({error}));
 }
 
 //Modification de la fiche d'un utilisateur
-exports.modifyOneUser = (req, res, next) => {
+exports.modifyOneUser = async (req, res, next) => {
 
-    db.promise().query(
-        'SELECT `id`, `imageURL` FROM `user` WHERE `id` = ? ', 
-        [req.params.user_id]
-    )
-    .then(([rows]) => {
+    try{
+        const [user] = await db.promise().query(
+            sql.getUserIdAndImg, 
+            [req.params.user_id]
+        )
 
-        //si l'utilisateur ne correspond pas au demandeur
-        if(rows[0].id !== req.auth.userId) {
+        //gestion des erreurs possible :
+
+        if (user.length === 0) {
+            return res.status(404).json({
+                error : new Error('l\'utilisateur n\'existe pas').message
+            })
+        }
+
+        if (user[0].id !== req.auth.userId) {
             return res.status(403).json({
                 error : new Error('Vous ne disposez pas des droits nécéssaires pour faire cette action !!!').message
             });
         }
 
-        //si la requete contient une nouvelle image
         const userObject = req.file ?
-        {
-            ...JSON.parse(req.body.user), 
-            newImg : tool.getImgUrl(req, 'profile')
-        } : {
-            ...req.body, 
-            newImg : rows[0].imageURL 
-        }
+            {
+                ...JSON.parse(req.body.user), 
+                newImg : tool.getImgUrl(req, req.routeConfig.imagePath)
+            } : {
+                ...req.body, 
+                newImg : user[0].imageURL 
+            }
 
-        const filename = rows[0].imageURL != null ? rows[0].imageURL.split('/profile/')[1] : null
+        const filename = user[0].imageURL != null ? user[0].imageURL.split('/profile/')[1] : null
 
-        if(!req.file || filename === 'defaultProfile.PNG' || filename === null) { // si l'image est celle par défault ou qu'il n'y a pas d'image dans la requète
-            db.promise().query(
-                'UPDATE `user` SET `firstname` = ?, `lastname` = ?, `email` = ?, `position` = ?, `imageURL` = ? WHERE `id` = ?', 
-                [userObject.firstname, userObject.lastname, userObject.email, userObject.position, userObject.newImg, req.params.user_id]
-            )
-                .then(() => res.status(200).json({ message : 'Profil utilisateur mis à jour avec succès !' }))
-                .catch(error => res.status(400).json({error}));
-        } else { // si il y avait une image et que ce n'etait pas l'image par défault on la supprime
-            fs.unlink(`media/profile/${filename}`, () => {
-                db.promise().query(
-                    'UPDATE `user` SET `firstname` = ?, `lastname` = ?, `email` = ?, `position` = ?, `imageURL` = ? WHERE `id` = ?', 
-                    [userObject.firstname, userObject.lastname, userObject.email, userObject.position, userObject.newImg, req.params.user_id]    
-                )
-                    .then(() => res.status(200).json({ message : 'Profil utilisateur mis à jour avec succès !' }))
-                    .catch(error => res.status(400).json({error}));
-            })
+        fs.existsSync(`${req.routeConfig.imagePath}/${filename}`)
+
+        if(req.file && filename !== 'defaultProfile.PNG' && filename !== null) { // si l'image n'est pas celle par défault
+            
+            let filePath = `${req.routeConfig.imagePath}/${filename}`
+            if(fs.existsSync(filePath)) {
+                await fs.unlinkSync(filePath)
+            }
+
         }
-    })
-    .catch(error => res.status(500).json({error}));
+        
+        await db.promise().query(
+            sql.updateUserProfile, 
+            [userObject.firstname, userObject.lastname, userObject.email, userObject.position, userObject.newImg, req.params.user_id]
+        )
+
+        return res.status(200).json({ message : 'Profil utilisateur mis à jour avec succès !' })
+    }
+
+    catch {
+
+        return error => res.status(500).json({error});
+    }
+
 }
+    
 
 //Suppression d'un user (admin uniquement)
 exports.deleteOneUser = (req, res, next) => {

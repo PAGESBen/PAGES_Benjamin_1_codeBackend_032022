@@ -6,17 +6,22 @@ const fs = require('fs');
 //Recuperation de tous les posts
 exports.getAllPosts = async (req, res, next) => {
     try {
-        let [posts] = await db.promise().query(
+
+        //1. On recupere tous les posts
+        let [posts] = await db.promise().query( 
             'SELECT * FROM `post` ORDER BY `date` DESC'
         )
         let postIds = posts.map(post => post.id )
 
+        console.log(postIds)
+
+        //2. On recupere le nombre de like par postId
         let [likes] = await db.promise().query(
-            'SELECT `post_id`, COUNT(*) AS countLikes FROM `postlikes` WHERE `post_id` IN ('+postIds.join(',')+') GROUP BY `post_id`'
+            'SELECT `post_id`, COUNT(1) AS countLikes FROM `postlikes` WHERE `post_id` IN ('+postIds.join(',')+') GROUP BY `post_id`'
         )
 
-        'SELECT `post_id` FROM `postlikes` WHERE `post_id` IN ('+postIds.join(',')+') AND `userId` = ?', 
-        [req.auth.userId]
+        // 'SELECT `post_id` FROM `postlikes` WHERE `post_id` IN ('+postIds.join(',')+') AND `userId` = ?', 
+        // [req.auth.userId]
 
         posts = posts.map(post => { // attention ajouter le booleen isliked pour savoir si l'utilisateur a liké
             post.likes = 0;
@@ -25,7 +30,6 @@ exports.getAllPosts = async (req, res, next) => {
                     post.likes = like.countLikes
                 }
             }
-
 
             return post
         })

@@ -106,3 +106,22 @@ ALTER TABLE `table enfant`
 ADD FOREIGN KEY (`famille_id`) REFERENCES `table parent` (`id`)
 
 ON DELETE CASCADE;
+
+
+
+
+************************
+
+CREATE OR REPLACE VIEW get_all_posts_view AS 
+SELECT post.id, post.userId, post.messageText, post.mediaURL, post.date, count(plikes.id) likesCounts, COUNT(mylikes.id) mylikes
+FROM `post` post
+LEFT JOIN postlikes plikes ON post.id = plikes.post_id
+LEFT JOIN postlikes mylikes ON post.id = mylikes.post_id AND mylikes.userId = 6 AND mylikes.id = plikes.id
+GROUP BY post.id, post.userId, post.messageText, post.mediaURL, post.date
+
+PAGINATION
+SELECT * 
+FROM get_all_posts_view
+WHERE date < ? 
+ORDER BY date DESC 
+LIMIT ?
