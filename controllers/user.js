@@ -107,15 +107,12 @@ exports.modifyOneUser = async (req, res, next) => {
 
         const filename = user[0].imageURL != null ? user[0].imageURL.split('/profile/')[1] : null
 
-        fs.existsSync(`${req.routeConfig.imagePath}/${filename}`)
-
         if(req.file && filename !== 'defaultProfile.PNG' && filename !== null) { // si l'image n'est pas celle par défault
             
             let filePath = `${req.routeConfig.imagePath}/${filename}`
             if(fs.existsSync(filePath)) {
                 await fs.unlinkSync(filePath)
             }
-
         }
         
         await db.promise().query(
@@ -135,48 +132,50 @@ exports.modifyOneUser = async (req, res, next) => {
     
 
 //Suppression d'un user (admin uniquement)
-exports.deleteOneUser = (req, res, next) => {
+exports.deleteOneUser = async (req, res, next) => {
 
-    if (!req.auth.admin) {
-        return res.status(403).json({
-            error : new Error('Il faut etre administrateur pour pouvoir effectuer cette opération !').message
-        })
+    try {
+        if (!req.auth.admin) {
+            return res.status(403).json({
+                error : new Error('Il faut etre administrateur pour pouvoir effectuer cette opération !').message
+            })
+        }
+
+        const [user] = await db.promise().query(
+            sql.getUserIdAndImg,
+            [req.params.user_id]
+        )
+
+        if (user.length === 0) {
+            return res.status(404).json({
+                error : new Error('l\'utilisateur n\'existe pas').message
+            })
+        }
+
+        const filename = user[0].imageURL != null ? user[0].imageURL.split('/profile/')[1] : null
+
+        if(filename !== 'defaultProfile.PNG' && filename !== null) {
+
+            let filePath = `${req.routeConfig.imagePath}/${filename}`
+            if(fs.existsSync(filePath)) {
+                await fs.unlinkSync(filePath)
+            
+            }
+        }
+
+        await db.promise().query(
+            sql.deleteUser,
+            [req.params.user_id]
+        )
+
+        return res.status(200).json({message : 'Utilisateur supprimé avec succès'})
+    
+    } catch {
+
+        return res.status(500).json({error})
+
     }
 
-    db.promise().query(
-        'SELECT `id`, `imageURL` FROM `user` WHERE `id` = ?',
-        [req.params.user_id]
-    )
-        .then(([rows]) => {
-
-            const filename = rows[0].imageURL != null ? rows[0].imageURL.split('/profile/')[1] : null
-
-            console.log(filename)
-
-            if(filename === 'defaultProfile.PNG' || filename === null){
-            console.log(filename)
-
-                db.promise().query(
-                    'DELETE FROM `user` WHERE `id` = ?', 
-                    [req.params.user_id]
-                )
-                    .then(() => res.status(200).json({message : 'Utilisateur supprimé avec succès !'}))
-                    .catch(error => res.status(400).json({error}))
-            
-            } else {
-
-                fs.unlink(`media/profile/${filename}`, () => {
-                    db.promise().query(
-                        'DELETE FROM `user` WHERE `id` = ?', 
-                        [req.params.user_id]
-                    )
-                        .then(() => res.status(200).json({message : 'Utilisateur supprimé avec succès !'}))
-                        .catch(error => res.status(400).json({error}));
-                })
-            }
-        })
-
-        .catch(error => res.status(500).json({error}))
 }
 
 //Récuperation de tous les posts d'un user
