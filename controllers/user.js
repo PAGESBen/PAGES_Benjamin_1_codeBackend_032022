@@ -178,12 +178,47 @@ exports.deleteOneUser = async (req, res, next) => {
 
 }
 
-//Récuperation de tous les posts d'un user
-exports.getUserPosts = (req, res, next) => {
-    db.promise().query(
-        'SELECT * from `post` WHERE `userId` = ?', 
-        [req.params.user_id]
-    )
-        .then(([posts]) => res.status(200).json({posts}))
-        .catch(error => res.status(500).json({error}));
+// Récuperation de tous les posts d'un user
+exports.getUserPosts = async (req, res, next) => {
+
+    try{
+        const [user] = await db.promise().query(
+            sql.getUserId,
+            [req.params.user_id]
+        )
+
+        if(user.length === 0) {
+            return res.status(404).json({
+                error : new Error('l\'utilisateur n\'existe pas').message
+            })
+        }
+
+        //calcul du nombre de posts et du nombre de pages
+        let [postsCount] = await db.promise().query(
+            sql.postsCount + 'WHERE `userId` = ?', 
+            [req.params.user_id]
+        )
+
+        const pagesCount = Math.ceil(postsCount[0].count / req.params.limit)
+        
+        let offset = (req.params.page - 1) * req.params.limit
+
+        console.log(req.params)
+
+        let [posts] = await db.promise().query(
+            sql.getUserPosts, 
+            [req.auth.userId, req.params.user_id, Number(req.params.limit) /* = limit*/, offset] //!jeremy : req.params.limit ne marche pas :o
+        )
+
+        //!jeremy : format ok? 
+        return res.status(200).json({
+            postsCount : postsCount[0].count, 
+            pagesCount, 
+            posts
+        })
+    }
+
+    catch {
+        res.status(500).json({error})
+    }
 }

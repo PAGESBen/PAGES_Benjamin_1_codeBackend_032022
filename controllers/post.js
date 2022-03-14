@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const sql = require('../config/sqlRequest');
 const tool = require('../config/tool');
 const fs = require('fs');
 
@@ -7,33 +8,12 @@ const fs = require('fs');
 exports.getAllPosts = async (req, res, next) => {
     try {
 
-        //1. On recupere tous les posts
-        let [posts] = await db.promise().query( 
-            'SELECT * FROM `post` ORDER BY `date` DESC'
-        )
-        let postIds = posts.map(post => post.id )
+        let offset = (req.params.page - 1) * req.params.limit
 
-        console.log(postIds)
-
-        //2. On recupere le nombre de like par postId
-        let [likes] = await db.promise().query(
-            'SELECT `post_id`, COUNT(1) AS countLikes FROM `postlikes` WHERE `post_id` IN ('+postIds.join(',')+') GROUP BY `post_id`'
-        )
-
-        // 'SELECT `post_id` FROM `postlikes` WHERE `post_id` IN ('+postIds.join(',')+') AND `userId` = ?', 
-        // [req.auth.userId]
-
-        posts = posts.map(post => { // attention ajouter le booleen isliked pour savoir si l'utilisateur a liké
-            post.likes = 0;
-            for (let like of likes ) {
-                if (like.post_id === post.id) {
-                    post.likes = like.countLikes
-                }
-            }
-
-            return post
-        })
-
+       let [posts] = await db.promise().query(
+           sql.getAllPosts,
+           [req.auth.userId, Number(req.params.limit), offset] //!jeremy j'ai été obligé d'appeler le constructor Number pour indiquer que c'est un nombre
+       )
         return res.status(200).json(posts)
     }
     catch (e) {
@@ -42,13 +22,26 @@ exports.getAllPosts = async (req, res, next) => {
 }
 
 //recuperation d'un post
-exports.getOnePost = (req, res, next) => {
-    db.promise().query(
-        'SELECT * FROM `post` WHERE `id`= ?',
-        [req.params.post_id]
-    )
-    .then(([post]) => res.status(200).json(post))
-    .catch(error => res.status(400).json({error}))
+exports.getOnePost = async (req, res, next) => {
+    try {
+        
+        let [post] = await db.promise().query(
+            sql.getOnePost,
+            [req.auth.userId, req.params.post_id]
+        )
+
+        if (post.length === 0) {
+            return res.status(404).json({
+                error : new Error('Post introuvable !')
+            })
+        }
+
+        return res.status(200).json(post)
+    }
+    catch {
+        return res.status(200).json({error})
+    }
+
 }
 
 //Post d'un post
@@ -204,17 +197,3 @@ exports.like = (req, res, next) => {
     })
     .catch(error => res.status(500).json({error}));
 }
-
-//Récuperation du nombre de like d'un post 
-exports.likes = (req, res, next) => {
-    db.promise().query(
-        'SELECT `userId` FROM `postlikes` WHERE `post_id` = ?', 
-        [req.params.post_id]
-    )
-    .then(([userLike]) => {
-        const LikesCount = userLike.length
-        res.status(200).json({LikesCount})
-    })
-    .catch((error) => res.status(500).json(error));
-}
-
