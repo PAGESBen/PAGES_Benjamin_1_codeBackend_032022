@@ -50,14 +50,14 @@ exports.postOnePost = (req, res, next) => {
     const postObject = req.file ?
     {
         ...JSON.parse(req.body.post),
-        mediaURL : tool.getImgUrl(req, 'post')
+        mediaURL : tool.getImgUrl(req, req.routeConfig.mediaPath)
     } : {
         ...req.body,
-        mediaURL : NULL
+        mediaURL : null
     }
 
     db.promise().query(
-        'INSERT INTO `post` (`userId`, `messageText`, `mediaURL`) VALUES (?, ?, ?)',
+        sql.postOnePost,
         [req.auth.userId, postObject.messageText, postObject.mediaURL]
     )
     .then(() => res.status(200).json({message : 'Post enregistré !'}))
@@ -65,12 +65,20 @@ exports.postOnePost = (req, res, next) => {
 }
 
 //modification d'un post
-exports.modifyOnePost = (req, res, next) => {
-    db.promise().query(
-        'SELECT `userId`, `mediaURL` FROM `post` WHERE `id`= ?', 
-        [req.params.post_id]
-    )
-    .then(([post]) => {
+exports.modifyOnePost = async (req, res, next) => {
+   try {
+        
+        const [post] = await db.promise().query(
+            sql.getPostUserIdAndImg, 
+            [req.params.post_id]
+        )
+
+        //gestion des erreur
+        if(post.length === 0) {
+            return res.status(404).json({
+                error : new Error('Le post n\'existe pas').message
+            })
+        }
 
         if(req.auth.userId !== post[0].userId) {
             return res.status(403).json({
@@ -81,43 +89,47 @@ exports.modifyOnePost = (req, res, next) => {
         const postObject = req.file ?
         {
             ...JSON.parse(req.body.post),
-            mediaURL : tool.getImgUrl(req, 'post'),
+            mediaURL : tool.getImgUrl(req, req.routeConfig.mediaPath)
         } : {
             ...req.body,
-            mediaURL : post[0].mediaURL,
+            mediaURL : post[0].mediaURL
         }
 
         const filename = post[0].mediaURL != null ? post[0].mediaURL.split('/post/')[1] : null
 
-        if(!req.file || filename === null ) {
-            db.promise().query(
-                'UPDATE `post` SET `messageText` = ?, `mediaURL`=? WHERE `id`= ?',
-                [postObject.messageText, postObject.mediaURL, req.params.post_id]
-            )
-            .then(() => res.status(200).json({message : 'Post modifié avec succès !'}))
-            .catch(error => res.status(400).json({error}));
-        } else {
-            fs.unlink(`media/post/${filename}`, () => {
-                db.promise().query(
-                    'UPDATE `post` SET `messageText` = ?, `mediaURL`=? WHERE `id`= ?',
-                    [postObject.messageText, postObject.mediaURL, req.params.post_id]
-                )
-                .then(() => res.status(200).json({message : 'Post modifié avec succès !'}))
-                .catch(error => res.status(400).json({error}));
-            })
+        if(req.file && filename !== null) {
+            let filePath = `${req.routeConfig.mediaPath}/${filename}`
+            if(fs.existsSync(filePath)) {
+                await fs.unlinkSync(filePath)
+            }
         }
 
-    })
-    .catch(error => res.status(500).json({error}));
+        db.promise().query(
+            sql.updateOnePost,
+            [postObject.messageText, postObject.mediaURL, req.params.post_id]
+        )
+
+        return res.status(200).json({message : 'Post modifié avec succès !'})
+
+   }
+   catch (error) {
+       return res.status(500).json({error})
+   }
 }
 
 //Suppression d'un post
 exports.deleteOnePost = async (req, res, next) => {
-    db.promise().query(
-        'SELECT `id`, `userId`, `mediaURL` FROM `post` WHERE `id`= ?',
-        [req.params.post_id]
-    )
-    .then(([post]) => {
+    try {
+        const [post] = await db.promise().query(
+            sql.getPostUserIdAndImg,
+            [req.params.post_id]
+        )
+
+        if(post.length === 0) {
+            return res.status(404).json({
+                error : new Error('Post introuvable !').message
+            })
+        }
 
         if(post[0].userId !== req.auth.userId && !req.auth.admin) {
             return res.status(403).json({
@@ -128,28 +140,22 @@ exports.deleteOnePost = async (req, res, next) => {
         //utilisation du package fs pour supprimer le média lié au post
         const filename = post[0].mediaURL != null ? post[0].mediaURL.split('/post/')[1] : null
 
-        if (filename !== null) {
-            // if(false) { 
-            //     await fs.unlink(`media/post/${filename}`)
-            //  }
-            fs.unlink(`media/post/${filename}`, () => {
-                db.promise().query(
-                    'DELETE FROM `post` WHERE `id`= ?', 
-                    [req.params.post_id]
-                )
-                .then(() => res.status(200).json({message : 'Post supprimé avec succès !'}))
-                .catch(error => res.status(400).json({error}));
-            })
-        } else {
-            db.promise().query(
-                'DELETE FROM `post` WHERE `id`= ?', 
-                [req.params.post_id]
-            )
-            .then(() => res.status(200).json({message : 'Post supprimé avec succès !'}))
-            .catch(error => res.status(400).json({error}));
+        if(filename !== null) { // si l'image n'est pas celle par défault
+            let filePath = `${req.routeConfig.imagePath}/${filename}`
+            if(fs.existsSync(filePath)) {
+                await fs.unlinkSync(filePath)
+            }
         }
-    }) 
-    .catch(error => res.status(500).json({error}));
+
+        await db.promise().query(
+            sql.deleteOnePost, 
+            [req.params.post_id]
+        )
+    }
+    catch (error) {
+        return res.status(500).json({error})
+    }
+
 }
 
 //Like ou delike

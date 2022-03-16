@@ -30,23 +30,8 @@ exports.userRoute = (req, res, next) => {
 exports.postRoute = (req, res, next) => {
 
     const route = 'post';
-    const imagePath = 'media/post';
-    req.routeConfig = {route, imagePath}
-
-    if(req.params.post_id) {
-        db.promise().query(
-            'SELECT `id` FROM `post` WHERE `id` = ?',
-            [req.params.post_id]
-        )
-            .then(([post]) => {
-                if (post.length === 0) {
-                    return res.status(404).json({
-                        error : new Error('Post introuvable !').message
-                    })
-                }
-            })
-            .catch(error => res.status(500).json({error}))
-    }
+    const mediaPath = 'media/post';
+    req.routeConfig = {route, mediaPath}
 
     next()
 }
