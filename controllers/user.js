@@ -99,7 +99,7 @@ exports.modifyOneUser = async (req, res, next) => {
         const userObject = req.file ?
             {
                 ...JSON.parse(req.body.user), 
-                newImg : tool.getImgUrl(req, req.routeConfig.imagePath)
+                newImg : tool.getImgUrl(req, req.routeConfig.mediaPath)
             } : {
                 ...req.body, 
                 newImg : user[0].imageURL 
@@ -109,7 +109,7 @@ exports.modifyOneUser = async (req, res, next) => {
 
         if(req.file && filename !== 'defaultProfile.PNG' && filename !== null) { // si l'image n'est pas celle par défault
             
-            let filePath = `${req.routeConfig.imagePath}/${filename}`
+            let filePath = `${req.routeConfig.mediaPath}/${filename}`
             if(fs.existsSync(filePath)) {
                 await fs.unlinkSync(filePath)
             }
@@ -156,7 +156,7 @@ exports.deleteOneUser = async (req, res, next) => {
 
         if(filename !== 'defaultProfile.PNG' && filename !== null) {
 
-            let filePath = `${req.routeConfig.imagePath}/${filename}`
+            let filePath = `${req.routeConfig.mediaPath}/${filename}`
             if(fs.existsSync(filePath)) {
                 await fs.unlinkSync(filePath)
             
@@ -203,11 +203,9 @@ exports.getUserPosts = async (req, res, next) => {
         
         let offset = (req.params.page - 1) * req.params.limit
 
-        console.log(req.params)
-
         let [posts] = await db.promise().query(
             sql.getUserPosts, 
-            [req.auth.userId, req.params.user_id, Number(req.params.limit) /* = limit*/, offset] //!jeremy : req.params.limit ne marche pas :o
+            [req.auth.userId, req.params.user_id, Number(req.params.limit), offset] //!jeremy : req.params.limit ne marche pas :o
         )
 
         //!jeremy : format ok? 

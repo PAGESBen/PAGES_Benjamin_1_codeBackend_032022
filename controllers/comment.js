@@ -1,18 +1,27 @@
 const db = require('../config/db');
 const fs = require('fs');
 const tool = require('../config/tool');
-const { get } = require('express/lib/response');
-
+const sql = require('../config/sqlRequest');
 
 
 //Récuperation des commentaires d'un post
-exports.getComment = (req, res, next) => {
-    db.promise().query(
-        'SELECT * FROM comment WHERE post_id = ?', 
-        [req.params.post_id]
-    )
-    .then(([comments]) => res.status(200).json({comments}))
-    .catch(error => res.status(500).json({error}));
+exports.getComment = async (req, res, next) => {
+
+    try{
+    
+        let offset = (req.params.page - 1) * req.params.limit
+
+        let [comments] = await db.promise().query(
+            sql.getAllCommentsByPostId,
+            [req.auth.userId, req.params.post_id, Number(req.params.limit), offset]
+        )
+    
+        return res.status(200).json(comments)
+
+    }
+    catch(error){
+        return res.status(200).json({error})
+    }
 }
 
 //Ajout d'un commentaire sur un post
@@ -24,11 +33,11 @@ exports.postComment = (req, res, next) => {
         mediaURL : tool.getImgUrl(req, 'comment'),
     } : {
         ...req.body,
-        mediaURL : NULL,
+        mediaURL : null,
     }
 
     db.promise().query(
-        'INSERT INTO `comment` (`userId`, `messageText`, `mediaURL`, `post_id`) VALUES (?, ?, ?, ?)',
+        sql.postOneComment,
         [req.auth.userId, commentObject.messageText, commentObject.mediaURL, req.params.post_id]
     )
     .then(() => res.status(200).json({message : 'Commentaire enregistré !'}))
@@ -153,17 +162,4 @@ exports.like = (req, res, next) => {
         }
     })
     .catch(error => res.status(500).json({error}));
-}
-
-//Récuperation du nombre de like d'un post 
-exports.likes = (req, res, next) => {
-    db.promise().query(
-        'SELECT `userId` FROM `commentlikes` WHERE `comment_id` = ?', 
-        [req.params.comment_id]
-    )
-    .then(([userLike]) => {
-        const LikesCount = userLike.length
-        res.status(200).json({LikesCount})
-    })
-    .catch((error) => res.status(500).json(error));
 }

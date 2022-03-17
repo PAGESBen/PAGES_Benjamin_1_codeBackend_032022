@@ -141,7 +141,7 @@ exports.deleteOnePost = async (req, res, next) => {
         const filename = post[0].mediaURL != null ? post[0].mediaURL.split('/post/')[1] : null
 
         if(filename !== null) { // si l'image n'est pas celle par défault
-            let filePath = `${req.routeConfig.imagePath}/${filename}`
+            let filePath = `${req.routeConfig.mediaPath}/${filename}`
             if(fs.existsSync(filePath)) {
                 await fs.unlinkSync(filePath)
             }
@@ -151,6 +151,8 @@ exports.deleteOnePost = async (req, res, next) => {
             sql.deleteOnePost, 
             [req.params.post_id]
         )
+
+        return res.status(200).json({message : 'Post supprimé!'})
     }
     catch (error) {
         return res.status(500).json({error})
