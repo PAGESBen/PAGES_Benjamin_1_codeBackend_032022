@@ -23,7 +23,8 @@ module.exports =
 
     //COMMENTS
     getAllCommentsByPostId : 'SELECT `comment`.`id`, `comment`.`userId`, `comment`.`messageText`, `comment`.`mediaURL`, `comment`.`date`, count(DISTINCT `clikes`.`id`) likesCounts, COUNT(DISTINCT `mylikes`.`id`) mylikes FROM `comment` comment LEFT JOIN `commentlikes` clikes ON `comment`.`id` = `clikes`.`comment_id` LEFT JOIN `commentlikes` mylikes ON `comment`.`id` = `mylikes`.`comment_id` AND `mylikes`.`userId` = ? AND `mylikes`.`id` = `clikes`.`id` WHERE `comment`.`post_id` = ? GROUP BY `comment`.`id` ORDER BY `date` DESC LIMIT ? OFFSET ?;',
-    postOneComment : 'INSERT INTO `comment` (`userId`, `messageText`, `mediaURL`, `post_id`) VALUES (?, ?, ?, ?)'
+    postOneComment : 'INSERT INTO `comment` (`userId`, `messageText`, `mediaURL`, `post_id`) VALUES (?, ?, ?, ?)',
+    commentsCount : 'SELECT COUNT(1) count FROM `comment`'
 
   }
 

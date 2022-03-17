@@ -8,15 +8,27 @@ const sql = require('../config/sqlRequest');
 exports.getComment = async (req, res, next) => {
 
     try{
-    
+
+        const [commentsCount] = await db.promise().query(
+            sql.commentsCount + 'WHERE `post_id` = ?'
+            [req.params.post_id]
+        )
+
+
+
+        const pagesCount = Math.ceil(commentsCount[0].count / req.params.limit)
         let offset = (req.params.page - 1) * req.params.limit
 
         let [comments] = await db.promise().query(
             sql.getAllCommentsByPostId,
             [req.auth.userId, req.params.post_id, Number(req.params.limit), offset]
         )
-    
-        return res.status(200).json(comments)
+
+        return res.status(200).json({
+            commentsCount : commentsCount[0].count,
+            pagesCount,
+            comments
+        })
 
     }
     catch(error){
