@@ -23,8 +23,8 @@ exports.postRoute = (req, res, next) => {
 exports.commentRoute = (req, res, next) => {
 
     const route = 'comment';
-    const imagePath = 'media/comment';
-    req.routeConfig = {route, imagePath}
+    const mediaPath = 'media/comment';
+    req.routeConfig = {route, mediaPath}
 
     // if(req.params.post_id) {
     //     db.promise().query(

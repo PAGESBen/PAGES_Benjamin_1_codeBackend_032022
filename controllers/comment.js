@@ -42,7 +42,7 @@ exports.postComment = (req, res, next) => {
     const commentObject = req.file ?
     {
         ...JSON.parse(req.body.comment),
-        mediaURL : tool.getImgUrl(req, 'comment'),
+        mediaURL : tool.getImgUrl(req, req.routeConfig.mediaPath),
     } : {
         ...req.body,
         mediaURL : null,
@@ -57,53 +57,67 @@ exports.postComment = (req, res, next) => {
 }
 
 //Modification d'un commentaire
-exports.modifyOnecomment = (req, res, next) => {
-    db.promise().query(
-        'SELECT `userId`, `mediaURL` FROM `comment` WHERE `id`= ?', 
+exports.modifyOnecomment = async (req, res, next) => {
+    try {
+
+    const [comment] = await db.promise().query(
+        sql.getCommentUserIdAndImg, 
         [req.params.comment_id]
     )
-    .then(([comment]) => {
+
+    if(comment.length === 0) {
+        return res.status(404).json({
+            error : new Error('Commentaire introuvable !').message
+        })
+    }
     
-        if(!comment[0]){
-            return res.status(400).json({
-                error : new Error('Commentaire introuvable !').message
-            })
-        }
+    if(req.auth.userId !== comment[0].userId) {
+        return res.status(403).json({
+            error : new Error('Il n\'est pas possible de modifier le commentaire d\'un autre utilisateur !').message
+        })
+    }
 
-        if(req.auth.userId !== comment[0].userId) {
-            return res.status(403).json({
-                error : new Error('Il n\'est pas possible de modifier le commentaire d\'un autre utilisateur !').message
-            })
-        }
+    const commentObject = req.file ?
+    {
+        ...JSON.parse(req.body.comment),
+        mediaURL : tool.getImgUrl(req, req.routeConfig.mediaPath)
+    } : {
+        ...req.body,
+        mediaURL : comment[0].mediaURL
+    }
 
-        const commentObject = req.file ?
-        {
-            ...JSON.parse(req.body.comment),
-            mediaURL : tool.getImgUrl(req, 'comment')
-        } : {
-            ...req.body,
-            mediaURL : comment[0].mediaURL
-        }
+    //logique de suppression de l'image
+    const filename = comment[0].mediaURL != null ? comment[0].mediaURL.split('/comment/')[1] : null
 
-        db.promise().query(
-            'UPDATE `comment` SET `messageText` = ?, `mediaURL`=? WHERE `id`= ?',
-            [commentObject.messageText, commentObject.mediaURL, req.params.comment_id]
-        )
-        .then(() => res.status(200).json({message : 'Commentaire modifié avec succès !'}))
-        .catch(error => res.status(400).json({error}));
-    })
-    .catch(error => res.status(500).json({error}));
+    if(req.file && filename !== null) {
+        let filePath = `${req.routeConfig.mediaPath}/${filename}`
+        if(fs.existsSync(filePath)) {
+            await fs.unlinkSync(filePath)
+        }
+    }
+
+    await db.promise().query(
+        sql.modifyOneComment,
+        [commentObject.messageText, commentObject.mediaURL, req.params.comment_id]
+    )
+
+    return res.status(200).json({message : 'commentaire modifié avec succès !'})
+
+    } catch (error) {
+        return res.status(500).json({error})        
+    }
 }
 
 //Suppression d'un Commentaire
-exports.deleteOneComment = (req, res, next) => {
-    db.promise().query(
-        'SELECT `id`, `userId`, `mediaURL` FROM `comment` WHERE `id`= ?',
-        [req.params.comment_id]
-    )
-    .then(([comment]) => {
+exports.deleteOneComment = async (req, res, next) => {
 
-        if(!comment[0]) {
+    try {
+        
+        const [comment] = await db.promise().query(
+            sql.getCommentUserIdAndImg,
+            [req.params.comment_id]
+        )
+        if(comment.length === 0) {
             return res.status(400).json({
                 error : new Error('Commentaire introuvable !').message
             })
@@ -115,18 +129,29 @@ exports.deleteOneComment = (req, res, next) => {
             })
         }
 
-        //utilisation du package fs pour supprimer le média lié au commentaire
-        const filename = comment[0].mediaURL.split('/media/')[1]
-        fs.unlink(`media/${filename}`, () => {
-            db.promise().query(
-                'DELETE FROM `comment` WHERE `id`= ?', 
-                [req.params.comment_id]
-            )
-            .then(() => res.status(200).json({message : 'Commentaire supprimé avec succès !'}))
-            .catch(error => res.status(400).json({error}));
-        })
-    }) 
-    .catch(error => res.status(500).json({error}));
+
+        //logique de suppression de l'image
+        const filename = comment[0].mediaURL != null ? comment[0].mediaURL.split('/comment/')[1] : null
+
+        if(filename !== null) {
+            let filePath = `${req.routeConfig.mediaPath}/${filename}`
+            if(fs.existsSync(filePath)) {
+                await fs.unlinkSync(filePath)
+            }
+        }
+
+        await db.promise().query(
+            sql.deleteOneComment, 
+            [req.params.comment_id]
+        )
+
+        return res.status(200).json({message : 'Commentaire supprimé !'})
+
+    }
+    catch (error) {
+        return res.status(500).json({error})
+    }
+
 }
 
 //Ajout d'un like sur un commentaire
