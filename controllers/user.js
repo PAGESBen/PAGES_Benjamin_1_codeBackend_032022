@@ -45,7 +45,8 @@ exports.userLogin = (req, res, next) => {
                             { userId : rows[0].id }, 
                             process.env.TOKEN_KEY,
                             { expiresIn : '24h' }
-                        )
+                        ), 
+                        admin : rows[0].admin
                     });
                 })
                 .catch(error => res.status(500).json({error}));
@@ -99,10 +100,10 @@ exports.modifyOneUser = async (req, res, next) => {
         const userObject = req.file ?
             {
                 ...JSON.parse(req.body.user), 
-                newImg : tool.getImgUrl(req, req.routeConfig.mediaPath)
+                imageURL : tool.getImgUrl(req, req.routeConfig.mediaPath)
             } : {
                 ...req.body, 
-                newImg : user[0].imageURL 
+                umageURL : user[0].imageURL 
             }
 
         const filename = user[0].imageURL != null ? user[0].imageURL.split('/profile/')[1] : null
@@ -117,10 +118,10 @@ exports.modifyOneUser = async (req, res, next) => {
         
         await db.promise().query(
             sql.updateUserProfile, 
-            [userObject.firstname, userObject.lastname, userObject.email, userObject.position, userObject.newImg, req.params.user_id]
+            [userObject.firstname, userObject.lastname, userObject.email, userObject.position, userObject.imageURL, req.params.user_id]
         )
 
-        return res.status(200).json({ message : 'Profil utilisateur mis à jour avec succès !' })
+        return res.status(200).json({ ...userObject, id : req.params.user_id })
     }
 
     catch {

@@ -4,7 +4,7 @@ module.exports =
   {
     //USER
     createUser : 'INSERT INTO `user` (`firstname`, `lastname`, `email`, `password`, `imageURL`, `position`) VALUES (?, ?, ?, ?, ?, ?)',
-    getUserByMail : 'SELECT `id`, `password` FROM `user` WHERE `email` = ?',
+    getUserByMail : 'SELECT `id`, `password`, `admin` FROM `user` WHERE `email` = ?',
     getUserProfil : 'SELECT `id`, `firstname`, `lastname`, `email`, `imageURL`, `position`  FROM `user` WHERE `id` =?',
     getUserId : 'SELECT `id` FROM `user` WHERE `id` = ?',
     getUserIdAndImg : 'SELECT `id`, `imageURL` FROM `user` WHERE `id` = ?',

@@ -20,7 +20,7 @@ app.use((req, res, next) => {
 });
 
 app.use(express.json());
-app.use('/images', express.static(path.join(__dirname, 'images'))); //permet à l'app d'aller chercher les images dans le dossier image
+app.use('/media', express.static(path.join(__dirname, 'media'))); //permet à l'app d'aller chercher les images dans le dossier image
 
 app.use('/api', userRoutes);
 app.use('/api/post', postRoutes);

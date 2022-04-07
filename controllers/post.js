@@ -7,14 +7,23 @@ const fs = require('fs');
 //Recuperation de tous les posts
 exports.getAllPosts = async (req, res, next) => {
     try {
-
+        let [postsCount] = await db.promise().query(
+            sql.postsCount, 
+            [req.params.user_id]
+        )
+        
+        const pagesCount = Math.ceil(postsCount[0].count / req.params.limit)
         let offset = (req.params.page - 1) * req.params.limit
 
        let [posts] = await db.promise().query(
            sql.getAllPosts,
            [req.auth.userId, Number(req.params.limit), offset] //!jeremy j'ai été obligé d'appeler le constructor Number pour indiquer que c'est un nombre
        )
-        return res.status(200).json(posts)
+        return res.status(200).json({
+            postsCount : postsCount[0].count, 
+            pagesCount, 
+            posts            
+        })
     }
     catch (e) {
         return res.status(500).json({e})
