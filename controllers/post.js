@@ -48,22 +48,30 @@ exports.getAllPosts = async (req, res, next) => {
 //recuperation d'un post
 exports.getOnePost = async (req, res, next) => {
     try {
-        
-        let [post] = await db.promise().query(
+        let [singlePost] = await db.promise().query(
             sql.getOnePost,
             [req.auth.userId, req.params.post_id]
         )
 
-        if (post.length === 0) {
+        if (singlePost.length === 0) {
             return res.status(404).json({
                 error : new Error('Post introuvable !')
             })
         }
 
+        let mediaType = singlePost[0].mediaURL === null ? null : tool.getMediaType(singlePost[0].mediaURL)
+        
+        console.log(singlePost)
+
+        const post = {
+            ...singlePost[0],
+            mediaType
+        }
+
         return res.status(200).json(post)
     }
     catch {
-        return res.status(200).json({error})
+        return res.status(500).json({error})
     }
 
 }
