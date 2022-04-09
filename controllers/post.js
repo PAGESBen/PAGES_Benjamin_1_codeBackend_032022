@@ -15,14 +15,29 @@ exports.getAllPosts = async (req, res, next) => {
         const pagesCount = Math.ceil(postsCount[0].count / req.params.limit)
         let offset = (req.params.page - 1) * req.params.limit
 
-       let [posts] = await db.promise().query(
+       let [postsList] = await db.promise().query(
            sql.getAllPosts,
-           [req.auth.userId, Number(req.params.limit), offset] //!jeremy j'ai été obligé d'appeler le constructor Number pour indiquer que c'est un nombre
+           [req.auth.userId, Number(req.params.limit), offset]
        )
+
+        let mediaType = null
+        let posts = []
+        for(let post of postsList) {
+
+            mediaType = post.mediaURL === null ? null : tool.getMediaType(post.mediaURL)
+            
+            post = {
+                ...post, 
+                mediaType
+            }
+
+            posts.push(post)
+        }
+
         return res.status(200).json({
             postsCount : postsCount[0].count, 
             pagesCount, 
-            posts            
+            posts
         })
     }
     catch (e) {
@@ -56,6 +71,12 @@ exports.getOnePost = async (req, res, next) => {
 //Post d'un post
 exports.postOnePost = (req, res, next) => {
 
+    if(!req.file && req.body.messageText ==='' ){
+        return res.status(400).json({
+            error : new Error('Le post est vide !')
+        })
+    }
+
     const postObject = req.file ?
     {
         ...JSON.parse(req.body.post),
@@ -70,7 +91,7 @@ exports.postOnePost = (req, res, next) => {
         [req.auth.userId, postObject.messageText, postObject.mediaURL]
     )
     .then(() => res.status(200).json({message : 'Post enregistré !'}))
-    .catch(error => res.status(400).json({error}));
+    .catch(error => res.status(500).json({error}));
 }
 
 //modification d'un post
