@@ -14,16 +14,28 @@ exports.getComment = async (req, res, next) => {
             [req.params.post_id]
         )
 
-
-
         const pagesCount = Math.ceil(commentsCount[0].count / req.params.limit)
         let offset = (req.params.page - 1) * req.params.limit
 
-        let [comments] = await db.promise().query(
+        let [commentsList] = await db.promise().query(
             sql.getAllCommentsByPostId,
             [req.auth.userId, req.params.post_id, Number(req.params.limit), offset]
         )
+        
+        let mediaType = null
+        let comments = []
 
+        for(let comment of commentsList) {
+            mediaType = comment.mediaURL === null ? null : tool.getMediaType(comment.mediaURL)
+        
+            comment = {
+                ...comment, 
+                mediaType
+            }
+
+            comments.push(comment)
+        }
+        
         return res.status(200).json({
             commentsCount : commentsCount[0].count,
             pagesCount,
