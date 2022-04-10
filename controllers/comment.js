@@ -10,7 +10,7 @@ exports.getComment = async (req, res, next) => {
     try{
 
         const [commentsCount] = await db.promise().query(
-            sql.commentsCount + 'WHERE `post_id` = ?'
+            sql.commentsCount + 'WHERE post_id = ?',
             [req.params.post_id]
         )
 
@@ -36,6 +36,7 @@ exports.getComment = async (req, res, next) => {
             comments.push(comment)
         }
         
+        console.log(commentsCount)
         return res.status(200).json({
             commentsCount : commentsCount[0].count,
             pagesCount,
