@@ -39,6 +39,12 @@ exports.getComment = async (req, res, next) => {
 //Ajout d'un commentaire sur un post
 exports.postComment = (req, res, next) => {
 
+    if(!req.file && req.body.messageText ==='' ){
+        return res.status(400).json({
+            error : new Error('Le post est vide !')
+        })
+    }
+
     const commentObject = req.file ?
     {
         ...JSON.parse(req.body.comment),
