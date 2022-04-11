@@ -36,7 +36,6 @@ exports.getComment = async (req, res, next) => {
             comments.push(comment)
         }
         
-        console.log(commentsCount)
         return res.status(200).json({
             commentsCount : commentsCount[0].count,
             pagesCount,
@@ -177,7 +176,7 @@ exports.deleteOneComment = async (req, res, next) => {
 //Like ou delike
 exports.like = (req, res, next) => {
     db.promise().query(
-        'SELECT `userId` FROM `commentlikes` WHERE `comment_id` = ? AND `userId` = ?',
+        sql.getUserCommentLike,
         [req.params.comment_id, req.auth.userId]
     )
     .then(([userLike]) => {
@@ -193,7 +192,7 @@ exports.like = (req, res, next) => {
             } else {
                 
                 db.promise().query(
-                    'DELETE FROM `commentlikes` WHERE `userId` = ? AND `comment_id`= ?',
+                    sql.deleteCommentLike,
                     [req.auth.userId, req.params.comment_id]
                 )
                 .then(() => res.status(200).json({message : 'Like supprimé !'}))
@@ -209,7 +208,7 @@ exports.like = (req, res, next) => {
                 })
             } else {
                 db.promise().query(
-                    'INSERT INTO `commentlikes` (`userId`, `comment_id`) VALUES (?, ?)', 
+                    sql.postCommentLike, 
                     [req.auth.userId, req.params.comment_id]
                 )
                 .then(() => res.status(200).json({message : 'Like enregistré avec succès !'}))

@@ -60,8 +60,6 @@ exports.getOnePost = async (req, res, next) => {
         }
 
         let mediaType = singlePost[0].mediaURL === null ? null : tool.getMediaType(singlePost[0].mediaURL)
-        
-        console.log(singlePost)
 
         const post = {
             ...singlePost[0],
@@ -201,7 +199,7 @@ exports.deleteOnePost = async (req, res, next) => {
 //Like ou delike
 exports.like = (req, res, next) => {
     db.promise().query(
-        'SELECT `postlikes`.`userId` FROM `postlikes` JOIN `post` ON `postlikes`.`post_id` = `post`.`id` WHERE `post`.`id` = ? AND `postlikes`.`userId` = ?',
+        sql.getUserPostLike,
         [req.params.post_id, req.auth.userId]
     )
     .then(([userLike]) => {
@@ -217,7 +215,7 @@ exports.like = (req, res, next) => {
             } else {
                 
                 db.promise().query(
-                    'DELETE FROM `postlikes` WHERE `userId` = ? AND `post_id`= ?',
+                    sql.deletePostLike,
                     [req.auth.userId, req.params.post_id]
                 )
                 .then(() => res.status(200).json({message : 'Like supprimé !'}))
@@ -233,7 +231,7 @@ exports.like = (req, res, next) => {
                 })
             } else {
                 db.promise().query(
-                    'INSERT INTO `postlikes` (`userId`, `post_id`) VALUES (?, ?)', 
+                    sql.postPostLike, 
                     [req.auth.userId, req.params.post_id]
                 )
                 .then(() => res.status(200).json({message : 'Like enregistré avec succès !'}))

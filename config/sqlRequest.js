@@ -19,7 +19,10 @@ module.exports =
     postOnePost : 'INSERT INTO `post` (`userId`, `messageText`, `mediaURL`) VALUES (?, ?, ?)',
     getPostUserIdAndImg : 'SELECT `userId`, `mediaURL` FROM `post` WHERE `id`= ?',
     updateOnePost : 'UPDATE `post` SET `messageText` = ?, `mediaURL`=? WHERE `id`= ?',
-    deleteOnePost : 'DELETE FROM `post` WHERE `id`= ?', 
+    deleteOnePost : 'DELETE FROM `post` WHERE `id`= ?',
+    getUserPostLike : 'SELECT userId FROM postlikes WHERE post_id = ? AND userId = ?',
+    deletePostLike : 'DELETE FROM `postlikes` WHERE `userId` = ? AND `post_id`= ?',
+    postPostLike : 'INSERT INTO `postlikes` (`userId`, `post_id`) VALUES (?, ?)',
 
     //COMMENTS
     getAllCommentsByPostId : 'SELECT `comment`.`id`, `comment`.`userId`, `user`.`firstname`, `user`.`lastname`, `user`.`imageURL` userImg, `comment`.`messageText`, `comment`.`mediaURL`, `comment`.`date`, count(DISTINCT `clikes`.`id`) likesCounts, COUNT(DISTINCT `mylikes`.`id`) mylikes FROM `comment` comment LEFT JOIN `commentlikes` clikes ON `comment`.`id` = `clikes`.`comment_id` LEFT JOIN `commentlikes` mylikes ON `comment`.`id` = `mylikes`.`comment_id` AND `mylikes`.`userId` = ? AND `mylikes`.`id` = `clikes`.`id` LEFT JOIN `user` user ON `comment`.`userId` = `user`.`id` WHERE `comment`.`post_id` = ? GROUP BY `comment`.`id` ORDER BY `date` DESC LIMIT ? OFFSET ?;',
@@ -27,7 +30,10 @@ module.exports =
     commentsCount : 'SELECT COUNT(1) count FROM `comment`', 
     getCommentUserIdAndImg : 'SELECT `userId`, `mediaURL` FROM `comment` WHERE `id`= ?', 
     modifyOneComment : 'UPDATE `comment` SET `messageText` = ?, `mediaURL`=? WHERE `id`= ?', 
-    deleteOneComment : 'DELETE FROM `comment` WHERE `id`= ?'
+    deleteOneComment : 'DELETE FROM `comment` WHERE `id`= ?',
+    getUserCommentLike : 'SELECT userId FROM commentlikes WHERE comment_id = ? AND userId = ?',
+    deleteCommentLike : 'DELETE FROM `commentlikes` WHERE `userId` = ? AND `comment_id`= ?',
+    postCommentLike : 'INSERT INTO `commentlikes` (`userId`, `comment_id`) VALUES (?, ?)'
 
   }
 
