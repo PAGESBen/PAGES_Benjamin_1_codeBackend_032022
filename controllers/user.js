@@ -103,7 +103,7 @@ exports.modifyOneUser = async (req, res, next) => {
                 imageURL : tool.getImgUrl(req, req.routeConfig.mediaPath)
             } : {
                 ...req.body, 
-                umageURL : user[0].imageURL 
+                imageURL : user[0].imageURL 
             }
 
         const filename = user[0].imageURL != null ? user[0].imageURL.split('/profile/')[1] : null
@@ -120,7 +120,6 @@ exports.modifyOneUser = async (req, res, next) => {
             sql.updateUserProfile, 
             [userObject.firstname, userObject.lastname, userObject.email, userObject.position, userObject.imageURL, req.params.user_id]
         )
-
         return res.status(200).json({ ...userObject, id : req.params.user_id })
     }
 
@@ -130,13 +129,12 @@ exports.modifyOneUser = async (req, res, next) => {
     }
 
 }
-    
 
 //Suppression d'un user (admin uniquement)
 exports.deleteOneUser = async (req, res, next) => {
 
     try {
-        if (!req.auth.admin) {
+        if (!req.auth.admin && req.auth.userId != req.paramsreq.params.user_id) {
             return res.status(403).json({
                 error : new Error('Il faut etre administrateur pour pouvoir effectuer cette opération !').message
             })
