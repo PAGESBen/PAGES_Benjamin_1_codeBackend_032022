@@ -134,9 +134,9 @@ exports.modifyOneUser = async (req, res, next) => {
 exports.deleteOneUser = async (req, res, next) => {
 
     try {
-        if (!req.auth.admin && req.auth.userId != req.paramsreq.params.user_id) {
+        if (!req.auth.admin && req.auth.userId != req.params.user_id) {
             return res.status(403).json({
-                error : new Error('Il faut etre administrateur pour pouvoir effectuer cette opération !').message
+                error : new Error('Il faut etre administrateur ou propriétaire de la fiche user pour pouvoir effectuer cette opération !').message
             })
         }
 
@@ -170,9 +170,7 @@ exports.deleteOneUser = async (req, res, next) => {
         return res.status(200).json({message : 'Utilisateur supprimé avec succès'})
     
     } catch {
-
         return res.status(500).json({error})
-
     }
 
 }
