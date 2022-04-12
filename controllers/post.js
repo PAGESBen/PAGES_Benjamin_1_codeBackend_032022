@@ -131,9 +131,19 @@ exports.modifyOnePost = async (req, res, next) => {
             mediaURL : post[0].mediaURL
         }
 
+        if(req.body.removeImg) {
+            postObject.mediaURL = null
+        }
+
+        if(postObject.messageText == '' && postObject.mediaURL == null) {
+            return res.status(400).json({
+                error : new Error('Impossible de supprimer tout le contenu d\'un post !').message
+            })
+        }
+
         const filename = post[0].mediaURL != null ? post[0].mediaURL.split('/post/')[1] : null
 
-        if(req.file && filename !== null) {
+        if((req.file || req.body.removeImg) && filename !== null) {
             let filePath = `${req.routeConfig.mediaPath}/${filename}`
             if(fs.existsSync(filePath)) {
                 await fs.unlinkSync(filePath)
