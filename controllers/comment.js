@@ -104,6 +104,16 @@ exports.modifyOnecomment = async (req, res, next) => {
         mediaURL : comment[0].mediaURL
     }
 
+    if(req.body.removeImg) {
+        commentObject.mediaURL = null
+    }
+
+    if(commentObject.messageText == '' && commentObject.mediaURL == null) {
+        return res.status(400).json({
+            error : new Error('Impossible de supprimer tout le contenu d\'un commentaire !').message
+        })
+    }
+
     //logique de suppression de l'image
     const filename = comment[0].mediaURL != null ? comment[0].mediaURL.split('/comment/')[1] : null
 
