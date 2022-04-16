@@ -8,8 +8,6 @@ const connection = mysql.createConnection({
   database: process.env.DATABASE
 });
 
-// jeremy! : yes pour verifier si la connexion est ok !
-
 // open the MySQL connection
 connection.connect(error => {
   if (error) throw error;

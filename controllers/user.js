@@ -10,7 +10,7 @@ exports.userSignup = (req, res, next) => {
     bcrypt.hash(req.body.password, 10)
         .then( hash => {
 
-            const imageURL = tool.getImgUrl(req, 'profile', 'defaultProfile.PNG')
+            const imageURL = tool.getImgUrl(req, req.routeConfig.mediaPath, 'defaultProfile.PNG')
 
             db.promise().query(
                 sql.createUser,

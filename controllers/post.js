@@ -92,6 +92,8 @@ exports.postOnePost = (req, res, next) => {
         mediaURL : null
     }
 
+    console.log(postObject.mediaURL)
+
     db.promise().query(
         sql.postOnePost,
         [req.auth.userId, postObject.messageText, postObject.mediaURL]
