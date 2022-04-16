@@ -6,6 +6,8 @@ const admin = require('../middleware/admin');
 const multer = require('../middleware/multer-config');
 const routeControl = require('../middleware/route-control');
 
+const file = require('../middleware/multer-config')
+
 router.get('/:page/:limit', auth, postCtrl.getAllPosts);  //Récupération de tous les posts -> pagination
 router.get('/:post_id', auth, routeControl.postRoute, postCtrl.getOnePost);  //récuperation d'un post
 router.post('/', auth, routeControl.postRoute, multer, postCtrl.postOnePost); //Ajout d'un post

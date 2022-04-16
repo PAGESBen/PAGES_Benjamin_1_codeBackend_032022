@@ -16,7 +16,6 @@ exports.postRoute = (req, res, next) => {
     const route = 'post';
     const mediaPath = 'media/post';
     req.routeConfig = {route, mediaPath}
-
     next()
 }
 
