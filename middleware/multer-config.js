@@ -11,18 +11,6 @@ const MIME_TYPES = {
     'video/x-msvideo' : 'avi',
 };
 
-// //ajout fileValidation
-// const fileValidation = multer({
-//     fileFilter: (req, file, cb) => {
-//         const extension = file.mimetype.split('/')[0];
-//         if(extension !== 'video' && extension !== 'image'){
-//             return cb(new Error('Mauvais format de fichier !').message, false);
-//         }
-//         cb(null, true);
-//     }
-// });
-// //fin
-
 const storage = multer.diskStorage({
 
     destination: (req, file, callback) => {
@@ -35,19 +23,24 @@ const storage = multer.diskStorage({
     }
 });
 
-module.exports = multer({ //multer settings
+exports.upload = multer({ //multer settings
     storage: storage,
     fileFilter: function (req, file, cb) {
         const fileType = file.mimetype.split('/')[0];;
         if(fileType !== 'video' && fileType !== 'image'){
-            console.log('pas le bon fichier')
-            return cb(new Error('Mauvais format de fichier !').message, false);
+            req.fileValidationError = "Type de fichier non valide"
+            return cb(null, false, req.fileValidationError);
         }
         cb(null, true);
         console.log('bon fichier')
     }
 }).single('file')
 
-//Date.now est un time stamps (à la miliseconde) qui permet de rendre le fichier unique
-
-// module.exports = multer({upload}).single('file');
+exports.fileControl = (req, res, next) => {
+    if(req.fileValidationError) {
+        return res.status(404).json({
+            error : new Error('Format de fichier non valide !').message
+        })
+    }
+    next()
+}
