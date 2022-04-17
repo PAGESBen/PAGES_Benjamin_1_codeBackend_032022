@@ -32,7 +32,6 @@ exports.upload = multer({ //multer settings
             return cb(null, false, req.fileValidationError);
         }
         cb(null, true);
-        console.log('bon fichier')
     }
 }).single('file')
 
