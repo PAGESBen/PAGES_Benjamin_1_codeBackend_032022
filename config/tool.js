@@ -7,7 +7,7 @@ module.exports = {
     },
     getMediaType : function (fileName) {
         let video = ['mov', 'mp4', 'avi']
-        let image = ['jpg', 'jpeg', 'bmp']
+        let image = ['jpg', 'jpeg', 'bmp', 'png']
         let gif =  ['gif']
 
         if(fileName === null) {
