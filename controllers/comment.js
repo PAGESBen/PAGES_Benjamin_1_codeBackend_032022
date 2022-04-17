@@ -117,7 +117,7 @@ exports.modifyOnecomment = async (req, res, next) => {
     //logique de suppression de l'image
     const filename = comment[0].mediaURL != null ? comment[0].mediaURL.split('/comment/')[1] : null
 
-    if(req.file && filename !== null) {
+    if((req.file || req.body.removeImg) && filename !== null) {
         let filePath = `${req.routeConfig.mediaPath}/${filename}`
         if(fs.existsSync(filePath)) {
             await fs.unlinkSync(filePath)
