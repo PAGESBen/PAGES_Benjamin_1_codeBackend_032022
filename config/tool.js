@@ -6,7 +6,7 @@ module.exports = {
         return `${req.protocol}://${req.get('host')}/${path}/${defaultName ? defaultName : req.file.filename}`
     },
     getMediaType : function (fileName) {
-        let video = ['mov', 'mp4', 'avi']
+        let video = ['mpeg', 'mp4', 'avi']
         let image = ['jpg', 'jpeg', 'bmp', 'png']
         let gif =  ['gif']
 

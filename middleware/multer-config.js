@@ -37,7 +37,7 @@ exports.upload = multer({ //multer settings
 
 exports.fileControl = (req, res, next) => {
     if(req.fileValidationError) {
-        return res.status(404).json({
+        return res.status(400).json({
             error : new Error('Format de fichier non valide !').message
         })
     }
