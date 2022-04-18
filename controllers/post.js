@@ -4,7 +4,7 @@ const tool = require('../config/tool');
 const fs = require('fs');
 
 
-//Recuperation de tous les posts
+//Get posts
 exports.getAllPosts = async (req, res, next) => {
     try {
         let [postsCount] = await db.promise().query(
@@ -55,7 +55,7 @@ exports.getOnePost = async (req, res, next) => {
 
         if (singlePost.length === 0) {
             return res.status(404).json({
-                error : new Error('Post introuvable !')
+                error : new Error('Post not found !')
             })
         }
 
@@ -74,12 +74,12 @@ exports.getOnePost = async (req, res, next) => {
 
 }
 
-//Post d'un post
+//Add on post
 exports.postOnePost = (req, res, next) => {
 
     if(!req.file && req.body.messageText ==='' ){
         return res.status(400).json({
-            error : new Error('Le post est vide !')
+            error : new Error('Post is empty !')
         })
     }
 
@@ -98,11 +98,11 @@ exports.postOnePost = (req, res, next) => {
         sql.postOnePost,
         [req.auth.userId, postObject.messageText, postObject.mediaURL]
     )
-    .then(() => res.status(200).json({message : 'Post enregistré !'}))
+    .then(() => res.status(200).json({message : 'Post added with success !'}))
     .catch(error => res.status(500).json({error}));
 }
 
-//modification d'un post
+//modify
 exports.modifyOnePost = async (req, res, next) => {
    try {
         
@@ -111,16 +111,16 @@ exports.modifyOnePost = async (req, res, next) => {
             [req.params.post_id]
         )
 
-        //gestion des erreur
+        //Error
         if(post.length === 0) {
             return res.status(404).json({
-                error : new Error('Le post n\'existe pas').message
+                error : new Error('Post not found').message
             })
         }
 
         if(req.auth.userId !== post[0].userId) {
             return res.status(403).json({
-                error : new Error('Il n\'est pas possible de modifier le post d\'un autre utilisateur !').message
+                error : new Error('only owner can modify a post!').message
             })
         }
 
@@ -139,7 +139,7 @@ exports.modifyOnePost = async (req, res, next) => {
 
         if(postObject.messageText == '' && postObject.mediaURL == null) {
             return res.status(400).json({
-                error : new Error('Impossible de supprimer tout le contenu d\'un post !').message
+                error : new Error('Post is empty !').message
             })
         }
 
@@ -157,15 +157,14 @@ exports.modifyOnePost = async (req, res, next) => {
             [postObject.messageText, postObject.mediaURL, req.params.post_id]
         )
 
-        return res.status(200).json({message : 'Post modifié avec succès !'})
-
+        return res.status(200).json({message : 'Post modified with success !'})
    }
    catch (error) {
        return res.status(500).json({error})
    }
 }
 
-//Suppression d'un post
+//Delete
 exports.deleteOnePost = async (req, res, next) => {
     try {
         const [post] = await db.promise().query(
@@ -175,20 +174,20 @@ exports.deleteOnePost = async (req, res, next) => {
 
         if(post.length === 0) {
             return res.status(404).json({
-                error : new Error('Post introuvable !').message
+                error : new Error('Post not found !').message
             })
         }
 
         if(post[0].userId !== req.auth.userId && !req.auth.admin) {
             return res.status(403).json({
-                error : new Error('Seul le propriétaire du post ou un admin peut supprimer son post').message
+                error : new Error('only available for admin or owner').message
             })
         }
 
-        //utilisation du package fs pour supprimer le média lié au post
+        //delete media file
         const filename = post[0].mediaURL != null ? post[0].mediaURL.split('/post/')[1] : null
 
-        if(filename !== null) { // si l'image n'est pas celle par défault
+        if(filename !== null) {
             let filePath = `${req.routeConfig.mediaPath}/${filename}`
             if(fs.existsSync(filePath)) {
                 await fs.unlinkSync(filePath)
@@ -200,7 +199,7 @@ exports.deleteOnePost = async (req, res, next) => {
             [req.params.post_id]
         )
 
-        return res.status(200).json({message : 'Post supprimé!'})
+        return res.status(200).json({message : 'Post deleted with sucess!'})
     }
     catch (error) {
         return res.status(500).json({error})
@@ -208,7 +207,7 @@ exports.deleteOnePost = async (req, res, next) => {
 
 }
 
-//Like ou delike
+//Add or remove like
 exports.like = (req, res, next) => {
     db.promise().query(
         sql.getUserPostLike,
@@ -216,12 +215,12 @@ exports.like = (req, res, next) => {
     )
     .then(([userLike]) => {
 
-        if(req.body.like === 0) { // si suppression d'un like
+        if(req.body.like === 0) { // if delete like
         
-            if(userLike.length === 0) { // Si l'utilisateur n'avait pas liké
+            if(userLike.length === 0) { // if like is not found
 
-                return res.status(400).json({
-                    error : new Error('Aucun like à supprimer !').message
+                return res.status(404).json({
+                    error : new Error('like not found !').message
                 })
 
             } else {
@@ -230,16 +229,16 @@ exports.like = (req, res, next) => {
                     sql.deletePostLike,
                     [req.auth.userId, req.params.post_id]
                 )
-                .then(() => res.status(200).json({message : 'Like supprimé !'}))
+                .then(() => res.status(200).json({message : 'Like deleted with success !'}))
                 .catch(error => res.status(500).json(error));
             }
         }
 
-        if(req.body.like === 1) { // si il s'agit d'un like
+        if(req.body.like === 1) { // if like
 
-            if(userLike.length !== 0) { // si il y a déjà un like
+            if(userLike.length !== 0) { // if already liked
                 res.status(403).json({
-                    error : new Error('Il n\'est pas possible de liker 2 fois le même post !').message
+                    error : new Error('Post already liked !').message
                 })
             } else {
                 db.promise().query(

@@ -1,8 +1,9 @@
 const db = require('../config/db');
+const sql = require('../config/sqlRequest');
 
 module.exports = (req, res, next) => {
     db.promise().query(
-        'SELECT `admin` FROM `user` WHERE `id`= ?',
+        sql.admin,
         [req.auth.userId]
     )
     .then(([user]) => {
@@ -15,5 +16,5 @@ module.exports = (req, res, next) => {
         next()
 
     })
-    .catch(error => res.status(400).json({error}));
+    .catch(error => res.status(500).json({error}));
 };

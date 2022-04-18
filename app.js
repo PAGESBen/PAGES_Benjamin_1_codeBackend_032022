@@ -1,9 +1,8 @@
-//Importation d'express pour les middleware et de Mongoose pour MongoDB
 const express = require('express');
 const { cp } = require('fs');
-const path = require('path'); //permet de recuperer l'URL pour les images ligne 29
+const path = require('path');
 
-// Constante app avec express
+// App with Express
 const app = express()
 
 //Routes
@@ -11,7 +10,7 @@ const userRoutes = require('./routes/user');
 const postRoutes = require('./routes/post');
 const commentRoutes = require('./routes/comment');
 
-//Sécurité : CORS
+//Sécurity : CORS
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
@@ -26,5 +25,5 @@ app.use('/api', userRoutes);
 app.use('/api/post', postRoutes);
 app.use('/api/post', commentRoutes);
 
-// Exportation de l'app
+// Export App
 module.exports = app

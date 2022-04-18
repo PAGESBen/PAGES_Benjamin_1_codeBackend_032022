@@ -4,7 +4,7 @@ const tool = require('../config/tool');
 const sql = require('../config/sqlRequest');
 
 
-//Récuperation des commentaires d'un post
+//get comments by post id
 exports.getComment = async (req, res, next) => {
 
     try{
@@ -44,16 +44,16 @@ exports.getComment = async (req, res, next) => {
 
     }
     catch(error){
-        return res.status(200).json({error})
+        return res.status(500).json({error})
     }
 }
 
-//Ajout d'un commentaire sur un post
+//Add one comment
 exports.postComment = (req, res, next) => {
 
     if(!req.file && req.body.messageText ==='' ){
         return res.status(400).json({
-            error : new Error('Le post est vide !')
+            error : new Error('Empty post !')
         })
     }
 
@@ -70,73 +70,73 @@ exports.postComment = (req, res, next) => {
         sql.postOneComment,
         [req.auth.userId, commentObject.messageText, commentObject.mediaURL, req.params.post_id]
     )
-    .then(() => res.status(200).json({message : 'Commentaire enregistré !'}))
-    .catch(error => res.status(400).json({error}));
+    .then(() => res.status(200).json({message : 'Post with success'}))
+    .catch(error => res.status(500).json({error}));
 }
 
-//Modification d'un commentaire
+//Modify one comment
 exports.modifyOnecomment = async (req, res, next) => {
     try {
 
-    const [comment] = await db.promise().query(
-        sql.getCommentUserIdAndImg, 
-        [req.params.comment_id]
-    )
+        const [comment] = await db.promise().query(
+            sql.getCommentUserIdAndImg, 
+            [req.params.comment_id]
+        )
 
-    if(comment.length === 0) {
-        return res.status(404).json({
-            error : new Error('Commentaire introuvable !').message
-        })
-    }
-    
-    if(req.auth.userId !== comment[0].userId) {
-        return res.status(403).json({
-            error : new Error('Il n\'est pas possible de modifier le commentaire d\'un autre utilisateur !').message
-        })
-    }
-
-    const commentObject = req.file ?
-    {
-        ...JSON.parse(req.body.comment),
-        mediaURL : tool.getImgUrl(req, req.routeConfig.mediaPath)
-    } : {
-        ...req.body,
-        mediaURL : comment[0].mediaURL
-    }
-
-    if(req.body.removeImg) {
-        commentObject.mediaURL = null
-    }
-
-    if(commentObject.messageText == '' && commentObject.mediaURL == null) {
-        return res.status(400).json({
-            error : new Error('Impossible de supprimer tout le contenu d\'un commentaire !').message
-        })
-    }
-
-    //logique de suppression de l'image
-    const filename = comment[0].mediaURL != null ? comment[0].mediaURL.split('/comment/')[1] : null
-
-    if((req.file || req.body.removeImg) && filename !== null) {
-        let filePath = `${req.routeConfig.mediaPath}/${filename}`
-        if(fs.existsSync(filePath)) {
-            await fs.unlinkSync(filePath)
+        if(comment.length === 0) {
+            return res.status(404).json({
+                error : new Error('Comment not found !').message
+            })
         }
-    }
+        
+        if(req.auth.userId !== comment[0].userId) {
+            return res.status(403).json({
+                error : new Error('Only owner can modify a comment').message
+            })
+        }
 
-    await db.promise().query(
-        sql.modifyOneComment,
-        [commentObject.messageText, commentObject.mediaURL, req.params.comment_id]
-    )
+        const commentObject = req.file ?
+        {
+            ...JSON.parse(req.body.comment),
+            mediaURL : tool.getImgUrl(req, req.routeConfig.mediaPath)
+        } : {
+            ...req.body,
+            mediaURL : comment[0].mediaURL
+        }
 
-    return res.status(200).json({message : 'commentaire modifié avec succès !'})
+        if(req.body.removeImg) {
+            commentObject.mediaURL = null
+        }
+
+        if(commentObject.messageText == '' && commentObject.mediaURL == null) {
+            return res.status(400).json({
+                error : new Error('A comment can\'t be empty').message
+            })
+        }
+
+        //Remove previous media file if change or delete
+        const filename = comment[0].mediaURL != null ? comment[0].mediaURL.split('/comment/')[1] : null
+
+        if((req.file || req.body.removeImg) && filename !== null) {
+            let filePath = `${req.routeConfig.mediaPath}/${filename}`
+            if(fs.existsSync(filePath)) {
+                await fs.unlinkSync(filePath)
+            }
+        }
+
+        await db.promise().query(
+            sql.modifyOneComment,
+            [commentObject.messageText, commentObject.mediaURL, req.params.comment_id]
+        )
+
+        return res.status(200).json({message : 'Comment modified with success'})
 
     } catch (error) {
         return res.status(500).json({error})        
     }
 }
 
-//Suppression d'un Commentaire
+//Delete
 exports.deleteOneComment = async (req, res, next) => {
 
     try {
@@ -147,18 +147,17 @@ exports.deleteOneComment = async (req, res, next) => {
         )
         if(comment.length === 0) {
             return res.status(400).json({
-                error : new Error('Commentaire introuvable !').message
+                error : new Error('Comment not found !').message
             })
         }
 
         if(comment[0].userId !== req.auth.userId && !req.auth.admin) {
             return res.status(403).json({
-                error : new Error('Seul le propriétaire du commentaire ou un admin peut supprimer un commentaire').message
+                error : new Error('Only available for admin or owner').message
             })
         }
 
-
-        //logique de suppression de l'image
+        //Delete previous media
         const filename = comment[0].mediaURL != null ? comment[0].mediaURL.split('/comment/')[1] : null
 
         if(filename !== null) {
@@ -173,7 +172,7 @@ exports.deleteOneComment = async (req, res, next) => {
             [req.params.comment_id]
         )
 
-        return res.status(200).json({message : 'Commentaire supprimé !'})
+        return res.status(200).json({message : 'Comment deleted with success !'})
 
     }
     catch (error) {
@@ -182,8 +181,7 @@ exports.deleteOneComment = async (req, res, next) => {
 
 }
 
-//Ajout d'un like sur un commentaire
-//Like ou delike
+//Add or delete like
 exports.like = (req, res, next) => {
     db.promise().query(
         sql.getUserCommentLike,
@@ -191,12 +189,12 @@ exports.like = (req, res, next) => {
     )
     .then(([userLike]) => {
 
-        if(req.body.like === 0) { // si suppression d'un like
+        if(req.body.like === 0) { // if delete like
         
-            if(userLike.length === 0) { // Si l'utilisateur n'avait pas liké
+            if(userLike.length === 0) { // if like is not found
 
-                return res.status(400).json({
-                    error : new Error('Aucun like à supprimer !').message
+                return res.status(404).json({
+                    error : new Error('Like not found !').message
                 })
 
             } else {
@@ -205,23 +203,23 @@ exports.like = (req, res, next) => {
                     sql.deleteCommentLike,
                     [req.auth.userId, req.params.comment_id]
                 )
-                .then(() => res.status(200).json({message : 'Like supprimé !'}))
+                .then(() => res.status(200).json({message : 'Like deleted !'}))
                 .catch(error => res.status(500).json(error));
             }
         }
 
-        if(req.body.like === 1) { // si il s'agit d'un like
+        if(req.body.like === 1) { // if like
 
-            if(userLike.length !== 0) { // si il y a déjà un like
+            if(userLike.length !== 0) { // if like already exist
                 res.status(403).json({
-                    error : new Error('Il n\'est pas possible de liker 2 fois le même post !').message
+                    error : new Error('comment already liked').message
                 })
             } else {
                 db.promise().query(
                     sql.postCommentLike, 
                     [req.auth.userId, req.params.comment_id]
                 )
-                .then(() => res.status(200).json({message : 'Like enregistré avec succès !'}))
+                .then(() => res.status(200).json({message : 'Liked with sucess !'}))
                 .catch(error => res.status(500).json({error}));
             }
         }

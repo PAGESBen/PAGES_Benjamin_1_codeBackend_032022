@@ -5,7 +5,7 @@ const sql = require('../config/sqlRequest');
 const tool = require('../config/tool');
 const fs = require('fs');
 
-//création d'un utilisateur
+//User creation
 exports.userSignup = (req, res, next) => {
     bcrypt.hash(req.body.password, 10)
         .then( hash => {
@@ -22,22 +22,22 @@ exports.userSignup = (req, res, next) => {
         .catch(error => res.status(500).json({error}))
 };
 
-//login utilisateur
+//User Login
 exports.userLogin = (req, res, next) => {
     db.promise().query(
         sql.getUserByMail, 
         [req.body.email]
     )
-        .then(([rows]) => { // jeremy! :  fields pas obligatoire !!!
+        .then(([rows]) => {
             if (!rows[0]) {
                 return res.status(404).json({
-                    error : new Error('L\'adresse mail est inconnue !').message
+                    error : new Error('Mail not found !').message
                 })
             }
             bcrypt.compare(req.body.password, rows[0].password)
                 .then(valid => {
                     if (!valid){
-                        return res.status(401).json({ message : 'mot de passe incorrect !' })
+                        return res.status(401).json({ message : 'Invalid password !' })
                     }
                     res.status(200).json({
                         userId : rows[0].id,
@@ -55,7 +55,7 @@ exports.userLogin = (req, res, next) => {
 
 }
 
-//récuperation du profil d'un user
+//Get user Profile
 exports.getOneUser = (req, res, next) => {
     db.promise().query(
         sql.getUserProfil, 
@@ -65,7 +65,7 @@ exports.getOneUser = (req, res, next) => {
 
             if (user.length === 0) {
                 return res.status(404).json({
-                    error : new Error('l\'utilisateur n\'existe pas').message
+                    error : new Error('User not found').message
                 })
             }
 
@@ -74,7 +74,7 @@ exports.getOneUser = (req, res, next) => {
         .catch((error) => res.status(500).json({error}));
 }
 
-//Modification de la fiche d'un utilisateur
+//Modify profile
 exports.modifyOneUser = async (req, res, next) => {
 
     try{
@@ -83,17 +83,16 @@ exports.modifyOneUser = async (req, res, next) => {
             [req.params.user_id]
         )
 
-        //gestion des erreurs possible :
-
+        //Error :
         if (user.length === 0) {
             return res.status(404).json({
-                error : new Error('l\'utilisateur n\'existe pas').message
+                error : new Error('user not found').message
             })
         }
 
         if (user[0].id !== req.auth.userId) {
             return res.status(403).json({
-                error : new Error('Vous ne disposez pas des droits nécéssaires pour faire cette action !!!').message
+                error : new Error('Only owner can modify profile').message
             });
         }
 
@@ -108,7 +107,7 @@ exports.modifyOneUser = async (req, res, next) => {
 
         const filename = user[0].imageURL != null ? user[0].imageURL.split('/profile/')[1] : null
 
-        if(req.file && filename !== 'defaultProfile.PNG' && filename !== null) { // si l'image n'est pas celle par défault
+        if(req.file && filename !== 'defaultProfile.PNG' && filename !== null) { // If profile Img is the default Img
             
             let filePath = `${req.routeConfig.mediaPath}/${filename}`
             if(fs.existsSync(filePath)) {
@@ -122,21 +121,19 @@ exports.modifyOneUser = async (req, res, next) => {
         )
         return res.status(200).json({ ...userObject, id : req.params.user_id })
     }
-
-    catch {
-
-        return error => res.status(500).json({error});
+    catch (error) {
+        return res.status(500).json({error});
     }
 
 }
 
-//Suppression d'un user (admin uniquement)
+//Delete user
 exports.deleteOneUser = async (req, res, next) => {
 
     try {
         if (!req.auth.admin && req.auth.userId != req.params.user_id) {
             return res.status(403).json({
-                error : new Error('Il faut etre administrateur ou propriétaire de la fiche user pour pouvoir effectuer cette opération !').message
+                error : new Error('Only available for admin or owner').message
             })
         }
 
@@ -147,7 +144,7 @@ exports.deleteOneUser = async (req, res, next) => {
 
         if (user.length === 0) {
             return res.status(404).json({
-                error : new Error('l\'utilisateur n\'existe pas').message
+                error : new Error('User not found').message
             })
         }
 
@@ -167,15 +164,15 @@ exports.deleteOneUser = async (req, res, next) => {
             [req.params.user_id]
         )
 
-        return res.status(200).json({message : 'Utilisateur supprimé avec succès'})
+        return res.status(200).json({message : 'User deleted with success'})
     
-    } catch {
+    } catch (error) {
         return res.status(500).json({error})
     }
 
 }
 
-// Récuperation de tous les posts d'un user
+// get all user Posts
 exports.getUserPosts = async (req, res, next) => {
 
     try{
@@ -186,11 +183,10 @@ exports.getUserPosts = async (req, res, next) => {
 
         if(user.length === 0) {
             return res.status(404).json({
-                error : new Error('l\'utilisateur n\'existe pas').message
+                error : new Error('User not found').message
             })
         }
 
-        //calcul du nombre de posts et du nombre de pages
         let [postsCount] = await db.promise().query(
             sql.postsCount + 'WHERE `userId` = ?', 
             [req.params.user_id]
@@ -202,10 +198,9 @@ exports.getUserPosts = async (req, res, next) => {
 
         let [posts] = await db.promise().query(
             sql.getUserPosts, 
-            [req.auth.userId, req.params.user_id, Number(req.params.limit), offset] //!jeremy : req.params.limit ne marche pas :o
+            [req.auth.userId, req.params.user_id, Number(req.params.limit), offset]
         )
 
-        //!jeremy : format ok? 
         return res.status(200).json({
             postsCount : postsCount[0].count, 
             pagesCount, 
@@ -213,7 +208,7 @@ exports.getUserPosts = async (req, res, next) => {
         })
     }
 
-    catch {
+    catch (error) {
         res.status(500).json({error})
     }
 }

@@ -2,6 +2,8 @@ const req = require("express/lib/request")
 
 module.exports = 
   {
+    //ADMIN
+    admin : 'SELECT `admin` FROM `user` WHERE `id`= ?',
     //USER
     createUser : 'INSERT INTO `user` (`firstname`, `lastname`, `email`, `password`, `imageURL`, `position`) VALUES (?, ?, ?, ?, ?, ?)',
     getUserByMail : 'SELECT `id`, `password`, `admin` FROM `user` WHERE `email` = ?',

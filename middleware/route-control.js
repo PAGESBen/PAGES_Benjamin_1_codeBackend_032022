@@ -1,6 +1,6 @@
 const db = require('../config/db');
 
-//Controles des paramètres des req, des formats des images / vidéos, passafe des paths pour le stockage des médias
+//Add req.routeConfig for next middlewares and controllers
 
 exports.userRoute = (req, res, next) => {
 

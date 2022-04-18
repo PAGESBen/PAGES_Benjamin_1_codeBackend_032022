@@ -1,6 +1,6 @@
 const multer = require('multer');
 
-const MIME_TYPES = {
+const MIME_TYPES = { //supported files
     'image/jpg' : 'jpg', 
     'image/jpeg' : 'jpg',
     'image/png' : 'png',
@@ -38,7 +38,7 @@ exports.upload = multer({ //multer settings
 exports.fileControl = (req, res, next) => {
     if(req.fileValidationError) {
         return res.status(400).json({
-            error : new Error('Format de fichier non valide !').message
+            error : new Error('Unsupported file extension').message
         })
     }
     next()

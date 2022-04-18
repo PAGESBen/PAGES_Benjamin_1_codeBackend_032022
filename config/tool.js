@@ -5,7 +5,8 @@ module.exports = {
     getImgUrl : (req, path, defaultName) => {
         return `${req.protocol}://${req.get('host')}/${path}/${defaultName ? defaultName : req.file.filename}`
     },
-    getMediaType : function (fileName) {
+
+    getMediaType : function (fileName) { //for get posts and get comments Controllers
         let video = ['mpeg', 'mp4', 'avi']
         let image = ['jpg', 'jpeg', 'bmp', 'png']
         let gif =  ['gif']
