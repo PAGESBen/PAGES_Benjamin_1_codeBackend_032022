@@ -26,8 +26,8 @@ const storage = multer.diskStorage({
 exports.upload = multer({ //multer settings
     storage: storage,
     fileFilter: function (req, file, cb) {
-        const fileType = file.mimetype.split('/')[0];;
-        if(fileType !== 'video' && fileType !== 'image'){
+        const fileType = file.mimetype.split('/')[0];
+        if(MIME_TYPES[file.mimetype] == undefined && ((req.routeConfig.route === 'user' && fileType !== 'image') || (req.routeConfig.route !=='user' && fileType !== 'video' && fileType !== 'image'))){
             req.fileValidationError = "Type de fichier non valide"
             return cb(null, false, req.fileValidationError);
         }
