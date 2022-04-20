@@ -6,7 +6,9 @@ exports.userRoute = (req, res, next) => {
 
     const route = 'user';
     const mediaPath = 'media/profile';
-    req.routeConfig = {route, mediaPath};
+    const relatedMediaPath = 'media/post';
+    const relatedMediaPath2 = 'media/comment';
+    req.routeConfig = {route, mediaPath, relatedMediaPath, relatedMediaPath2};
     
     next()
 }
@@ -15,7 +17,8 @@ exports.postRoute = (req, res, next) => {
 
     const route = 'post';
     const mediaPath = 'media/post';
-    req.routeConfig = {route, mediaPath}
+    const relatedMediaPath = 'media/comment'
+    req.routeConfig = {route, mediaPath, relatedMediaPath}
     next()
 }
 

@@ -14,7 +14,7 @@ Backend développé avec node v16.13.1
 
     PORT = 3001
     TOKEN_KEY = <envoyé par mail>
-    BASE_HOST = à renseigner
+    BASE_HOST = 'localhost'
     BASE_USER = à renseigner
     BASE_PASSWORD = à renseigner
     DATABASE = 'groupomania'
@@ -31,4 +31,4 @@ Backend développé avec node v16.13.1
     Développeur chez CONNECT-E
 
 # License 
-    é pour le compte de la société Groupomania
+    Développé pour le compte de la société Groupomania

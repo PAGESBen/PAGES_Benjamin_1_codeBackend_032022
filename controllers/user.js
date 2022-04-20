@@ -159,6 +159,38 @@ exports.deleteOneUser = async (req, res, next) => {
             }
         }
 
+        const [relatedMedia] = await db.promise().query(
+            sql.getUserRelatedMedia,
+            [req.params.user_id]
+        )
+
+        //delete on cascade of related post(s) media(s)
+        for(let media of relatedMedia) {
+            let relatedfilename = media.mediaURL != null ? media.mediaURL.split('/post/')[1] : null
+            if(relatedfilename !== null) {
+                let relatedFilePath = `${req.routeConfig.relatedMediaPath}/${relatedfilename}`
+                if(fs.existsSync(relatedFilePath)) {
+                    await fs.unlinkSync(relatedFilePath)
+                }
+            }
+        }
+
+        const [relatedMedia2] = await db.promise().query(
+            sql.getUserRelatedMedia2,
+            [req.params.user_id]
+        )
+
+        //delete on cascade of related comment(s) media(s)
+        for(let media of relatedMedia2) {
+            let relatedfilename2 = media.mediaURL != null ? media.mediaURL.split('/comment/')[1] : null
+            if(relatedfilename2 !== null) {
+                let relatedFilePath2 = `${req.routeConfig.relatedMediaPath2}/${relatedfilename2}`
+                if(fs.existsSync(relatedFilePath2)) {
+                    await fs.unlinkSync(relatedFilePath2)
+                }
+            }
+        }
+
         await db.promise().query(
             sql.deleteUser,
             [req.params.user_id]

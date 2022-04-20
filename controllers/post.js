@@ -92,8 +92,6 @@ exports.postOnePost = (req, res, next) => {
         mediaURL : null
     }
 
-    console.log(postObject.mediaURL)
-
     db.promise().query(
         sql.postOnePost,
         [req.auth.userId, postObject.messageText, postObject.mediaURL]
@@ -191,6 +189,23 @@ exports.deleteOnePost = async (req, res, next) => {
             let filePath = `${req.routeConfig.mediaPath}/${filename}`
             if(fs.existsSync(filePath)) {
                 await fs.unlinkSync(filePath)
+            }
+        }
+
+        const [relatedMedia] = await db.promise().query(
+            sql.getPostRelatedMedia,
+            [req.params.post_id]
+        )
+
+        //delete on cascade of related comment(s) media(s)
+        for(let media of relatedMedia) {
+            let relatedfilename = media.mediaURL != null ? media.mediaURL.split('/comment/')[1] : null
+            if(relatedfilename !== null) {
+                let relatedFilePath = `${req.routeConfig.relatedMediaPath}/${relatedfilename}`
+                console.log('relatedFilePath')
+                if(fs.existsSync(relatedFilePath)) {
+                    await fs.unlinkSync(relatedFilePath)
+                }
             }
         }
 
