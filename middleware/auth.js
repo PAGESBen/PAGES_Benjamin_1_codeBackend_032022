@@ -43,3 +43,24 @@ exports.userExist = async (req, res, next) => {
         res.status(500).json({e})
     }
 }
+
+// Token Validation
+exports.userloginByToken = async (req, res, next) => {
+    try {
+        let [user] = await db.promise().query(
+            sql.getUserId,
+            [req.auth.userId]
+        )
+
+        if(user.length === 0) {
+            return res.status(404).json({
+                error : new Error('Token is valid but user has not been not found').message
+            })
+        } else {
+            return res.status(200).json({message : 'Valid token'})
+        }
+
+    } catch (e) {
+        res.status(500).json({e})
+    }
+}
